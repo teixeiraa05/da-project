@@ -47,5 +47,10 @@ struct ConferenceData {
 // PARSER ---------------------------------
 
 class Parser {
-    /*placeholder*/
+    public:
+        static ConferenceData parseFile(std::string& filename);
+
+    private:
+        static std::string trim(std::string s);
+        static int toInt(std::string& s);
 };

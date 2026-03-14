@@ -10,6 +10,7 @@ class Menu {
         Parser parser;
         bool dataLoaded = false;
         bool assignmentGenerated = false;
+        ConferenceData data;
 
         void displayMenu();
         void handleLoadFile();

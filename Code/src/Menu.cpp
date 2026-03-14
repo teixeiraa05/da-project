@@ -54,7 +54,19 @@ void Menu::displayMenu() {
 
 
 void Menu::handleLoadFile() {
-    // TODO
+    std::string filepath;
+    std::cout << "Enter file path: ";
+    std::cin >> filepath;
+
+    ConferenceData loadedData = Parser::parseFile(filepath);
+
+    if (loadedData.submissions.empty() && loadedData.reviewers.empty()) {
+        this->dataLoaded = false;
+    } else {
+        this->data = loadedData;
+        this->dataLoaded = true;
+        std::cout << "Data loaded successfully. " << this->data.submissions.size() << " submissions found." << std::endl;
+    }
 }
 
 void Menu::handleShowSubmissions() {
