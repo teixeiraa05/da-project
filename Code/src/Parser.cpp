@@ -31,12 +31,17 @@ ConferenceData Parser::parseFile(const std::string& filename) {
     std::string currentSection;
     
     while (std::getline(file, line)) {
-        line = trim(stripComment(line));
+        // Strip comment ONLY if line doesn't start with #
+        if (!line.empty() && line[0] != '#')
+            line = stripComment(line);
+
+        line = trim(line);
         if (line.empty()) continue;
         
 
         /* Parse section headers */
         if (line[0] == '#') {
+
             if (line.find("#Submissions") != std::string::npos) currentSection = "SUB";
             else if (line.find("#Reviewers") != std::string::npos) currentSection = "REV";
             else if (line.find("#Parameters") != std::string::npos) currentSection = "PARAM";
@@ -144,7 +149,9 @@ ConferenceData Parser::parseFile(const std::string& filename) {
         size_t start = s.find_first_not_of(" \t\r\n");
         if (start == std::string::npos) return "";
         size_t end = s.find_last_not_of(" \t\r\n");
-        return s.substr(start, end - start + 1);
+        std::string result = s.substr(start, end - start + 1);
+
+        return result;
     }
 
 

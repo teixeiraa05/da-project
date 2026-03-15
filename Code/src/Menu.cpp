@@ -1,4 +1,5 @@
 #include "../include/Menu.h"
+#include "../include/Parser.h"
 
 void Menu::run() {
     int choice;
@@ -57,8 +58,9 @@ void Menu::handleLoadFile() {
     std::string filepath;
     std::cout << "Enter file path: ";
     std::cin >> filepath;
+    Parser parser;
 
-    ConferenceData loadedData = Parser::parseFile(filepath);
+    ConferenceData loadedData = parser.parseFile(filepath);
 
     if (loadedData.submissions.empty() && loadedData.reviewers.empty()) {
         this->dataLoaded = false;

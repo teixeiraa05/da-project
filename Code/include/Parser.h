@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <string>
 #include <vector>
@@ -48,7 +49,7 @@ struct ConferenceData {
 
 class Parser {
     public:
-        ConferenceData Parser::parseFile(const std::string& filename);
+        ConferenceData parseFile(const std::string& filename);
 
     private:
         //parse each section

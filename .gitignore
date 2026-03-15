@@ -3,5 +3,6 @@
 
 # Compiled binaries
 main
+test_parser
 *.o
 *.out
