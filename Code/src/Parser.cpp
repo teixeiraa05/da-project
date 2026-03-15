@@ -4,40 +4,15 @@
 #include <iostream>
 #include <algorithm>
 
-std::string Parser::trim(std::string s) {
-    if (s.empty()) return s;
+// -------------------------- PARSER ---------------------------------
 
-    s.erase(0, s.find_first_not_of(" \t\r\n"));
-    s.erase(s.find_last_not_of(" \t\r\n") + 1);
+ConferenceData Parser::parseFile(const std::string& filename) {
+    /* 
+    
+    Parses the input file and fills the ConferenceData structure
+    
+    */
 
-    // Remove standard quoutes
-    s.erase(std::remove(s.begin(), s.end(), '\"'), s.end());
-
-    auto removeQuotes = [&](const std::string& quote) {
-        size_t pos;
-        while ((pos = s.find(quote)) != std::string::npos) {
-            s.erase(pos, quote.length());
-        }
-    };
-
-    removeQuotes("“");
-    removeQuotes("”");
-
-    return s;
-}
-
-int Parser::toInt(std::string& s) {
-    std::string cleaned = trim(s);
-
-    if (cleaned.empty()) return -1;
-    try {
-        return std::stoi(cleaned);
-    } catch (...) {
-        return -1;
-    }
-}
-
-ConferenceData Parser::parseFile(std::string& filename) {
     ConferenceData data;
     std::ifstream file(filename);
 
@@ -48,10 +23,11 @@ ConferenceData Parser::parseFile(std::string& filename) {
 
     std::string line;
     std::string currentSection = "";
-
+    
     while (std::getline(file, line)) {
         if (line.empty()) continue;
 
+        /* Parse section headers */
         if (line[0] == '#') {
             if (line.find("#Submissions") != std::string::npos) currentSection = "SUB";
             else if (line.find("#Reviewers") != std::string::npos) currentSection = "REV";
@@ -64,9 +40,10 @@ ConferenceData Parser::parseFile(std::string& filename) {
             continue;
         }
 
-        std::vector<std::string> tokens;
+        std::vector<std::string> tokens = splitLine(line);
         std::stringstream ss(line);
         std::string token;
+
         while (std::getline(ss, token, ',')) {
             tokens.push_back(token);
         }
@@ -117,3 +94,68 @@ ConferenceData Parser::parseFile(std::string& filename) {
     file.close();
     return data;
 }
+// -------------------------- PARSE SECTIONS ---------------------------------
+
+    void Parser::parseSubmission(const std::vector<std::string>& tokens, ConferenceData& data) {
+        //TODO
+    }
+
+    void Parser::parseReviewer(const std::vector<std::string>& tokens, ConferenceData& data) {
+        //TODO
+    }
+
+    void Parser::parseParameter(const std::vector<std::string>& tokens, ConferenceData& data) {
+        //TODO
+    }
+
+    void Parser::parseControl(const std::vector<std::string>& tokens, ConferenceData& data) {
+        //TODO
+    }
+
+
+// -------------------------- HELPERS ---------------------------------
+
+    std::string Parser::stripComment(const std::string& line) {
+        size_t pos = line.find('#');
+        return (pos != std::string::npos) ? line.substr(0, pos) : line;
+    }
+
+
+    std::string Parser::trim(const std::string& s) {
+        size_t start = s.find_first_not_of(" \t\r\n");
+        if (start == std::string::npos) return "";
+        size_t end = s.find_last_not_of(" \t\r\n");
+        return s.substr(start, end - start + 1);
+    }
+
+
+    std::vector<std::string> Parser::splitLine(const std::string& line) {
+        std::vector<std::string> res;
+        std::string cur;
+        bool inQuote = false; //there can be commas inside quotes, we should ignore them
+
+        for (char c : line) {
+            if (c == '"') inQuote = !inQuote;
+            else if (c == ',' && !inQuote) {
+                res.push_back(cur);
+                cur.clear();
+            } else {
+                cur += c;
+            }
+        }
+
+        res.push_back(cur); //push the last element
+        return res;
+    }
+
+    int Parser::toInt(const std::string& s) {
+        std::string cleaned = trim(s);
+        
+        if (cleaned.empty()) return -1;
+        try {
+            return std::stoi(cleaned);
+        } catch (...) {
+            return -1;
+        };
+    }
+
