@@ -12,8 +12,14 @@ ConferenceData Parser::parseFile(const std::string& filename) {
     Parses the input file and fills the ConferenceData structure
     
     */
+    ConferenceData data; 
 
-    ConferenceData data;
+    // Check for the .csv extension
+    if (filename.size() < 4 || filename.substr(filename.size() - 4) != ".csv") {
+        std::cerr << "Error: input file must have a .csv extension." << std::endl;
+        return data;
+    }
+
     std::ifstream file(filename);
 
     if (!file.is_open()) {
@@ -22,10 +28,12 @@ ConferenceData Parser::parseFile(const std::string& filename) {
     }
 
     std::string line;
-    std::string currentSection = "";
+    std::string currentSection;
     
     while (std::getline(file, line)) {
+        line = trim(stripComment(line));
         if (line.empty()) continue;
+        
 
         /* Parse section headers */
         if (line[0] == '#') {
@@ -33,61 +41,24 @@ ConferenceData Parser::parseFile(const std::string& filename) {
             else if (line.find("#Reviewers") != std::string::npos) currentSection = "REV";
             else if (line.find("#Parameters") != std::string::npos) currentSection = "PARAM";
             else if (line.find("#Control") != std::string::npos) currentSection = "CTRL";
+            // If it's a comment line that doesn't match any section header (like #Id, Title, ...), we just ignore it
             continue;
         }
 
-        if (line.find("Id, ") == 0 || line.find("MinReviews") == 0 || line.find("GenerateAssignments") == 0) {
-            continue;
-        }
-
+        
         std::vector<std::string> tokens = splitLine(line);
         std::stringstream ss(line);
         std::string token;
 
-        while (std::getline(ss, token, ',')) {
-            tokens.push_back(token);
-        }
 
-        if (!line.empty() && line.back() == ',') tokens.push_back("");
+        // Dispatch to the appropriate parsing function based on the current section
 
-        if (currentSection == "SUB" && tokens.size() >= 5) {
-            Submission sub;
-            sub.submissionId = toInt(tokens[0]);
-            sub.title = trim(tokens[1]);
-            sub.author = trim(tokens[2]);
-            sub.email = trim(tokens[3]);
-            sub.primary = toInt(tokens[4]);
-            if (tokens.size() > 5) sub.secondary = toInt(tokens[5]);
-            
-            data.submissions.push_back(sub);
-        }
-        else if (currentSection == "REV" && tokens.size() >= 4) {
-            Reviewer rev;
-            rev.reviewerId = toInt(tokens[0]);
-            rev.name = trim(tokens[1]);
-            rev.email = trim(tokens[2]);
-            rev.primary = toInt(tokens[3]);
-            if (tokens.size() > 4) rev.secondary = toInt(tokens[4]);
-            
-            data.reviewers.push_back(rev);
-        }
-        else if (currentSection == "PARAM" && tokens.size() >= 2) {
-            std::string key = trim(tokens[0]);
-            int val = toInt(tokens[1]);
-
-            if (key == "MinReviewsPerSubmission") data.params.minReviewsPerSubmission = val;
-            else if (key == "MaxReviewsPerReviewer") data.params.maxReviewsPerReviewer = val;
-            else if (key == "PrimaryReviewerExpertise") data.params.primaryReviewerExpertise = val;
-            else if (key == "SecondaryReviewerExpertise") data.params.secondaryReviewerExpertise = val;
-            else if (key == "PrimarySubmissionDomain") data.params.primarySubmissionDomain = val;
-            else if (key == "SecondarySubmissionDomain") data.params.secondarySubmissionDomain = val;
-        }
-        else if (currentSection == "CTRL" && tokens.size() >= 2) {
-            std::string key = trim(tokens[0]);
-
-            if (key == "GenerateAssignments") data.control.generateAssignments = toInt(tokens[1]);
-            else if (key == "RiskAnalysis") data.control.riskAnalysis = toInt(tokens[1]);
-            else if (key == "OutputFileName") data.control.outputFileName = trim(tokens[1]);
+        if (currentSection == "SUB") parseSubmission(tokens, data);
+        else if (currentSection == "REV" && tokens.size() >= 4) parseReviewer(tokens, data);
+        else if (currentSection == "PARAM" && tokens.size() >= 2) parseParameter(tokens, data);
+        else if (currentSection == "CTRL" && tokens.size() >= 2) parseControl(tokens, data);
+        else {
+            std::cerr << "Warning: Unrecognized line in input file: " << line << std::endl;
         }
     }
 
@@ -97,19 +68,67 @@ ConferenceData Parser::parseFile(const std::string& filename) {
 // -------------------------- PARSE SECTIONS ---------------------------------
 
     void Parser::parseSubmission(const std::vector<std::string>& tokens, ConferenceData& data) {
-        //TODO
+        Submission sub;
+        if(tokens.size() < 5) {
+            std::cerr << "Error: Invalid submission entry, expected at least 5 fields." << std::endl;
+            return;
+        }
+
+        sub.submissionId = toInt(tokens[0]);
+        sub.title = trim(tokens[1]);
+        sub.author = trim(tokens[2]);
+        sub.email = trim(tokens[3]);
+        sub.primary = toInt(tokens[4]);
+        if (tokens.size() > 5) sub.secondary = toInt(tokens[5]);
+        
+        data.submissions.push_back(sub);
     }
 
     void Parser::parseReviewer(const std::vector<std::string>& tokens, ConferenceData& data) {
-        //TODO
+        if(tokens.size() < 4) {
+            std::cerr << "Error: Invalid reviewer entry, expected at least 4 fields." << std::endl;
+            return;
+        }
+
+        Reviewer rev;
+        rev.reviewerId = toInt(tokens[0]);
+        rev.name = trim(tokens[1]);
+        rev.email = trim(tokens[2]);
+        rev.primary = toInt(tokens[3]);
+        if (tokens.size() > 4) rev.secondary = toInt(tokens[4]);
+
+        data.reviewers.push_back(rev);
     }
 
     void Parser::parseParameter(const std::vector<std::string>& tokens, ConferenceData& data) {
-        //TODO
+        if(tokens.size() < 2) {
+            std::cerr << "Error: Invalid parameter entry, expected at least 2 fields." << std::endl;
+            return;
+        }
+
+        std::string key = trim(tokens[0]);
+        int val = toInt(tokens[1]);
+
+        if (key == "MinReviewsPerSubmission") data.params.minReviewsPerSubmission = val;
+        else if (key == "MaxReviewsPerReviewer") data.params.maxReviewsPerReviewer = val;
+        else if (key == "PrimaryReviewerExpertise") data.params.primaryReviewerExpertise = val;
+        else if (key == "SecondaryReviewerExpertise") data.params.secondaryReviewerExpertise = val;
+        else if (key == "PrimarySubmissionDomain") data.params.primarySubmissionDomain = val;
+        else if (key == "SecondarySubmissionDomain") data.params.secondarySubmissionDomain = val;
+
     }
 
     void Parser::parseControl(const std::vector<std::string>& tokens, ConferenceData& data) {
-        //TODO
+        if(tokens.size() < 2) {
+            std::cerr << "Error: Invalid control entry, expected at least 2 fields." << std::endl;
+            return;
+        }
+
+        std::string key = trim(tokens[0]);
+        std::string val = trim(tokens[1]);
+        if (key == "GenerateAssignments") data.control.generateAssignments = toInt(val);
+        else if (key == "RiskAnalysis") data.control.riskAnalysis = toInt(val);
+        else if (key == "OutputFileName") data.control.outputFileName = val;
     }
 
 
