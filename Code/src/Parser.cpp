@@ -3,7 +3,7 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
-
+#include <set>
 // -------------------------- PARSER ---------------------------------
 
 ConferenceData Parser::parseFile(const std::string& filename) {
@@ -68,7 +68,12 @@ ConferenceData Parser::parseFile(const std::string& filename) {
     }
 
     file.close();
-    return data;
+    if(validate(data)) {
+        return data;
+    } else {
+        std::cerr << "Error: Validation failed for the parsed data. Please check the input file for issues." << std::endl;
+        return ConferenceData();
+    }
 }
 // -------------------------- PARSE SECTIONS ---------------------------------
 
@@ -184,4 +189,40 @@ ConferenceData Parser::parseFile(const std::string& filename) {
             return -1;
         };
     }
+
+// validation of submissions
+
+bool Parser::validate(ConferenceData& data) {
+
+    if (data.params.minReviewsPerSubmission < 0) {
+        std::cerr << "Error: MinReviewsPerSubmission is missing\n";
+        return false;
+    }
+    if (data.params.maxReviewsPerReviewer < 0) {
+        std::cerr << "Error: MaxReviewsPerReviewer is missing\n";
+        return false;
+    }
+
+    // Check for duplicate submission IDs
+    std::set<int> submissionIds;
+    for (const auto& sub : data.submissions) {
+        if (submissionIds.count(sub.submissionId)) {
+            std::cerr << "Validation Error: Duplicate submission ID " << sub.submissionId << std::endl;
+            return false;
+        }
+        submissionIds.insert(sub.submissionId);
+    }
+
+    // Check for duplicate reviewer IDs
+    std::set<int> reviewerIds;
+    for (const auto& rev : data.reviewers) {
+        if (reviewerIds.count(rev.reviewerId) > 0) {
+            std::cerr << "Validation Error: Duplicate reviewer ID " << rev.reviewerId << std::endl;
+            return false;
+        }
+        reviewerIds.insert(rev.reviewerId);
+    }
+
+    return true;
+}
 

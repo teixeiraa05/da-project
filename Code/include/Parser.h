@@ -64,4 +64,7 @@ class Parser {
         std::vector<std::string> splitLine (const std::string& line); //Splits a line into tokens based on commas, accounting for empty fields
         std::string trim(const std::string& str); //Trims whitespace from both ends of a string
 
+        //validation functions
+        bool validate(ConferenceData& data); //Validates the parsed data, returns true if valid, false otherwise. Also reports any issues found.
+
 };  
