@@ -14,8 +14,8 @@ class ConferenceGraph {
         ConferenceData data;
         
         int getSourceID() const;
-        int getReviewerID(int index) const;
-        int getSubmissionID(int index) const;
+        int getReviewerID(size_t index) const;
+        int getSubmissionID(size_t index) const;
         int getSinkID() const;
 
         bool domainsMatch(const Reviewer& rev, const Submission& sub) const; 
