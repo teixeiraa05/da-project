@@ -42,3 +42,21 @@ struct ConferenceData {
     Parameters params;
     Control control;
 };
+
+inline int domainsMatch(const Reviewer& rev, const Submission& sub, int mode) {
+    bool primaryMatch = rev.primary == sub.primary;
+
+    if (mode == 1) {
+        if(primaryMatch) return sub.primary;
+    } else if (mode == 2) {
+        if(primaryMatch) return sub.primary;
+        if(rev.primary == sub.secondary) return sub.secondary;
+    } else if (mode == 3) {
+        if(primaryMatch) return sub.primary;
+        if(rev.primary == sub.secondary) return sub.secondary;
+        if(rev.secondary == sub.primary) return sub.primary;
+        if(rev.secondary == sub.secondary) return sub.secondary;
+    }
+    
+    return 0;
+}
