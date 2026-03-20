@@ -25,7 +25,7 @@ Graph<int> ConferenceGraph::buildGraph() const {
     //Connect submission vertices to reviewer vertices based on domain matching
     for(size_t i = 0; i < data.submissions.size(); i++) {
         for (size_t j = 0; j < data.reviewers.size(); j++) {
-            if (domainsMatch(data.reviewers[j], data.submissions[i], data.control.generateAssignments)) {
+            if (domainsMatch(data.submissions[i], data.reviewers[j], data.control.generateAssignments)) {
                 graph.addEdge(getSubmissionID(i), getReviewerID(j), 1); //Connect submission vertices to reviewer vertices with capacity 1
             }
         }

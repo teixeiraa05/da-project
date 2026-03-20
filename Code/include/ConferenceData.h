@@ -43,7 +43,7 @@ struct ConferenceData {
     Control control;
 };
 
-inline int domainsMatch(const Reviewer& rev, const Submission& sub, int mode) {
+inline int domainsMatch(const Submission& sub, const Reviewer& rev, int mode) {
     bool primaryMatch = rev.primary == sub.primary;
 
     if (mode == 1) {
