@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Graph.h"
 
 // Function to test the given vertex 'w' and visit it if conditions are met
