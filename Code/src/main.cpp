@@ -1,4 +1,5 @@
 #include "../include/Menu.h"
+#include "../include/AssignmentSolver.h"
 
 int main(int argc, char* argv[]) {
     //Batch mode: if arguments are provided, run the program in batch mode
@@ -6,8 +7,16 @@ int main(int argc, char* argv[]) {
         std::string inputFile = argv[2];
         std::string riskFile = (argc >= 4) ? argv[3] : "";
         
-        //TODO - Implement batch mode processing using inputFile and riskFile
-        //parse input file, run assignment, and if riskFile is provided, run risk analysis and output results to riskFile
+        Parser parser;
+        ConferenceData data = parser.parseFile(inputFile);
+        if (data.submissions.empty() && data.reviewers.empty()) return 1;
+
+        AssignmentSolver solver(data);
+        solver.solve();
+
+        if (data.control.riskAnalysis > 0) {
+            solver.riskAnalysis();
+        }
 
         return 0;
     }

@@ -4,5 +4,6 @@
 # Compiled binaries
 main
 test_parser
+da_project
 *.o
 *.out
