@@ -3,12 +3,14 @@
 
 class AssignmentSolver {
 public:
-    AssignmentSolver(const ConferenceGraph& graph);
+    AssignmentSolver(const ConferenceData& data);
     
     void solve();
 
     //Exports the assignments to a CSV file. Format: submissionId, reviewerId, matchDomain and reviewerId, submissionId, matchDomain
     void exportAssignments(const std::string& filename) const;
+
+    void riskAnalysis() const;
 
 private:
     const ConferenceData& data;
