@@ -1,4 +1,4 @@
-#include "ConferenceGraph.h"
+#include "../include/ConferenceGraph.h"
 #include <iostream>
 
 ConferenceGraph::ConferenceGraph(const ConferenceData& data) : data(data) {}

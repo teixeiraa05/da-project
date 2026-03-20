@@ -15,4 +15,7 @@ public:
 private:
     const ConferenceData& data;
     Graph<int> flowGraph;
+
+    int getSubmissionRealId(int submissionId) const;
+    int getReviewerRealId(int reviewerId) const;
 };
