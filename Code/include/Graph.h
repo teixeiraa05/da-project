@@ -103,7 +103,48 @@ protected:
 template <class T>
 class Graph {
 public:
+    Graph() = default;
     ~Graph();
+
+    // Disable copy constructor and assignment operator
+    Graph(const Graph<T> &) = delete;
+    Graph<T> &operator=(const Graph<T> &) = delete;
+
+    // Move constructor
+    Graph(Graph<T> &&other) noexcept {
+        vertexSet = std::move(other.vertexSet);
+        distMatrix = other.distMatrix;
+        pathMatrix = other.pathMatrix;
+        other.distMatrix = nullptr;
+        other.pathMatrix = nullptr;
+    }
+
+    // Move assignment operator
+    Graph<T> &operator=(Graph<T> &&other) noexcept {
+        if (this != &other) {
+            // Clean up existing resources
+            if (distMatrix != nullptr) {
+                for (int i = 0; i < (int)vertexSet.size(); i++) delete [] distMatrix[i];
+                delete [] distMatrix;
+            }
+            if (pathMatrix != nullptr) {
+                for (int i = 0; i < (int)vertexSet.size(); i++) delete [] pathMatrix[i];
+                delete [] pathMatrix;
+            }
+            for (auto v : vertexSet) {
+                for (auto e : v->getAdj()) delete e;
+                delete v;
+            }
+
+            vertexSet = std::move(other.vertexSet);
+            distMatrix = other.distMatrix;
+            pathMatrix = other.pathMatrix;
+            other.distMatrix = nullptr;
+            other.pathMatrix = nullptr;
+        }
+        return *this;
+    }
+
     /*
     * Auxiliary function to find a vertex with a given the content.
     */
@@ -494,6 +535,12 @@ template <class T>
 Graph<T>::~Graph() {
     deleteMatrix(distMatrix, vertexSet.size());
     deleteMatrix(pathMatrix, vertexSet.size());
+    for (auto v : vertexSet) {
+        for (auto e : v->getAdj()) {
+            delete e;
+        }
+        delete v;
+    }
 }
 
 #endif /* DA_TP_CLASSES_GRAPH */

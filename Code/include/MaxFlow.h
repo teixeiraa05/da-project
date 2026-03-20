@@ -1,3 +1,6 @@
+#ifndef MAX_FLOW_H
+#define MAX_FLOW_H
+
 #include "Graph.h"
 
 // Function to test the given vertex 'w' and visit it if conditions are met
@@ -31,13 +34,17 @@ bool findAugmentingPath(Graph<T> *g, Vertex<T> *s, Vertex<T> *t) {
        for (auto e : v->getAdj()) {
            auto dest = e->getDest();
            double resid_capacity = e->getWeight() - e->getFlow();
-           testAndVisit(q, e, dest, resid_capacity);
+           if (!dest->isVisited() && resid_capacity > 0) {
+               testAndVisit(q, e, dest, resid_capacity);
+           }
        }
 
        for (auto e : v->getIncoming()) {
            auto dest = e->getOrig();
            double resid_capacity = e->getFlow();
-           testAndVisit(q, e, dest, resid_capacity);
+           if (!dest->isVisited() && resid_capacity > 0) {
+               testAndVisit(q, e, dest, resid_capacity);
+           }
        }
    }
     // Return true if a path to the target is found, false otherwise
@@ -89,6 +96,7 @@ void edmondsKarp(Graph<T> *g, int source, int sink) {
     // Find source and target vertices in the graph
     Vertex<T>* s = g->findVertex(source);
     Vertex<T>* t = g->findVertex(sink);
+    if (s == nullptr || t == nullptr) return;
     for (auto v : g->getVertexSet()) {
         auto edges = v->getAdj();
         for (auto e : edges) {
@@ -101,3 +109,6 @@ void edmondsKarp(Graph<T> *g, int source, int sink) {
         augmentFlowAlongPath(s, t, resid);
     }
 }
+
+#endif // MAX_FLOW_H
+

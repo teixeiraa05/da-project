@@ -1,3 +1,6 @@
+#ifndef CONFERENCE_GRAPH_H
+#define CONFERENCE_GRAPH_H
+
 #include "ConferenceData.h"
 #include "Graph.h"
 
@@ -18,3 +21,5 @@ class ConferenceGraph {
         int getSubmissionID(size_t index) const;
         int getSinkID() const;
 };
+
+#endif // CONFERENCE_GRAPH_H

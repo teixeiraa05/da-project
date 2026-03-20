@@ -36,17 +36,17 @@ Graph<int> ConferenceGraph::buildGraph() const {
 
 
 int ConferenceGraph::getReviewerID(size_t index) const {
-    return static_cast<int>(index + 1 + data.submissions.size());
+    return GetReviewerID(index, data.submissions.size());
 }
 
 int ConferenceGraph::getSubmissionID(size_t index) const {
-    return static_cast<int>(index + 1);
+    return GetSubmissionID(index);
 }
 
 int ConferenceGraph::getSourceID() const {
-    return 0;
+    return GetSourceID();
 }
 
 int ConferenceGraph::getSinkID() const {
-    return static_cast<int>(data.reviewers.size() + data.submissions.size() + 1);
+    return GetSinkID(data.submissions.size(), data.reviewers.size());
 }

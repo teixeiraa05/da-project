@@ -1,3 +1,6 @@
+#ifndef ASSIGNMENT_SOLVER_H
+#define ASSIGNMENT_SOLVER_H
+
 #include "ConferenceGraph.h"
 
 
@@ -19,3 +22,5 @@ private:
     int getSubmissionRealId(int submissionId) const;
     int getReviewerRealId(int reviewerId) const;
 };
+
+#endif // ASSIGNMENT_SOLVER_H

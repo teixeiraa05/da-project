@@ -1,3 +1,6 @@
+#ifndef CONFERENCE_DATA_H
+#define CONFERENCE_DATA_H
+
 #include <vector>
 #include <string>
 
@@ -46,7 +49,7 @@ struct ConferenceData {
 inline int domainsMatch(const Submission& sub, const Reviewer& rev, int mode) {
     bool primaryMatch = rev.primary == sub.primary;
 
-    if (mode == 1) {
+    if (mode == 1 || mode == 0) {
         if(primaryMatch) return sub.primary;
     } else if (mode == 2) {
         if(primaryMatch) return sub.primary;
@@ -60,3 +63,13 @@ inline int domainsMatch(const Submission& sub, const Reviewer& rev, int mode) {
     
     return 0;
 }
+
+// Utility functions for vertex IDs
+inline int GetSourceID() { return 0; }
+inline int GetSubmissionID(size_t index) { return static_cast<int>(index + 1); }
+inline int GetReviewerID(size_t index, size_t numSubmissions) { return static_cast<int>(index + 1 + numSubmissions); }
+inline int GetSinkID(size_t numSubmissions, size_t numReviewers) { return static_cast<int>(numSubmissions + numReviewers + 1); }
+inline int GetSubmissionIdx(int id) { return id - 1; }
+inline int GetReviewerIdx(int id, size_t numSubmissions) { return id - 1 - numSubmissions; }
+
+#endif // CONFERENCE_DATA_H

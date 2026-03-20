@@ -39,14 +39,19 @@ for i in {1..14}; do
     # Run the program in batch mode
     $EXEC -b "$INPUT_FILE" > /dev/null
 
+    # Dynamically find the generated file from the input data
+    # It finds OutputFileName, "filename.csv" and extracts filename.csv
+    GENERATED_FILE=$(grep "OutputFileName" "$INPUT_FILE" | cut -d',' -f2 | tr -d ' "[:space:]\r\n')
+    if [ -z "$GENERATED_FILE" ]; then GENERATED_FILE="output.csv"; fi
+
     # Check if the program actually generated the file
     if [ ! -f "$GENERATED_FILE" ]; then
-        echo "❌ Dataset $i: FAILED (No output file generated)"
+        echo "❌ Dataset $i: FAILED (No output file generated: $GENERATED_FILE)"
         continue
     fi
 
-    # Compare the files (ignoring whitespace and blank lines)
-    if diff -q -w -B "$GENERATED_FILE" "$EXPECTED_FILE" > /dev/null; then
+    # Compare the files (using diff exactly as requested by user)
+    if diff -q "$GENERATED_FILE" "$EXPECTED_FILE"; then
         echo "✅ Dataset $i: PASSED"
     else
         echo "❌ Dataset $i: FAILED (Outputs do not match)"
