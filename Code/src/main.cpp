@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
         AssignmentSolver solver(data);
         solver.solve();
 
-        if (!riskFile.empty()) {
+        if (data.control.riskAnalysis > 0) {
             solver.riskAnalysis();
         }
 
