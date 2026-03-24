@@ -7,3 +7,4 @@ test_parser
 da_project
 *.o
 *.out
+*.dot

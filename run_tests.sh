@@ -28,7 +28,7 @@ echo "========================================="
 # Loop through datasets 1 to 14
 for i in {1..14}; do
     INPUT_FILE="tests/input/dataset${i}.csv"
-    EXPECTED_FILE="tests/output/dataset${i}.csv"
+    EXPECTED_FILE="tests/output/output_dataset${i}.csv"
     
     # Check if input file exists
     if [ ! -f "$INPUT_FILE" ]; then
@@ -59,6 +59,7 @@ for i in {1..14}; do
     
     # Clean up the generated file for the next loop iteration
     rm -f "$GENERATED_FILE"
+    #rm -rf "output_dataset${i}.dot"  # Instruction to quickly clean up any generated .dot files
 done
 
 echo "========================================="
