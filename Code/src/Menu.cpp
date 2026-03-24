@@ -1,5 +1,6 @@
 #include "../include/Menu.h"
 #include "../include/Parser.h"
+#include "../include/AssignmentSolver.h"
 
 void Menu::run() {
     int choice;
@@ -72,25 +73,77 @@ void Menu::handleLoadFile() {
 }
 
 void Menu::handleShowSubmissions() {
-    // TODO
+    if (!dataLoaded) {
+        std::cout << "No data loaded. Please load a file first." << std::endl;
+        return;
+    }
+
+    std::cout << "\nSubmissions:\n";
+    for (const auto& sub : data.submissions) {
+        std::cout << "ID: " << sub.submissionId 
+                  << ", Primary Domain: " << sub.primary 
+                  << ", Secondary Domain: " << sub.secondary 
+                  << std::endl;
+    }
 }
 
 void Menu::handleShowReviewers() {
-    // TODO
+    if (!dataLoaded) {
+        std::cout << "No data loaded. Please load a file first." << std::endl;
+        return;
+    }
+
+    std::cout << "\nReviewers:\n";
+    for (const auto& rev : data.reviewers) {
+        std::cout << "ID: " << rev.reviewerId 
+                  << ", Primary Domain: " << rev.primary 
+                  << ", Secondary Domain: " << rev.secondary 
+                  << std::endl;
+    }
 }
 
 void Menu::handleShowParameters() {
-    // TODO
+    if (!dataLoaded) {
+        std::cout << "No data loaded. Please load a file first." << std::endl;
+        return;
+    }
+
+    std::cout << "\nParameters:\n";
+    std::cout << "Minimum reviews per submission: " << data.params.minReviewsPerSubmission << std::endl;
+    std::cout << "Maximum reviews per reviewer: " << data.params.maxReviewsPerReviewer << std::endl;
 }
 
 void Menu::handleShowControl() {
-    // TODO
+    if (!dataLoaded) {
+        std::cout << "No data loaded. Please load a file first." << std::endl;
+        return;
+    }
+
+    std::cout << "\nControl Settings:\n";
+    std::cout << "Generate Assignments: " << data.control.generateAssignments << std::endl;
+    std::cout << "Risk Analysis: " << data.control.riskAnalysis << std::endl;
+    std::cout << "Output File Name: " << data.control.outputFileName << std::endl;
 }
 
 void Menu::handleRunAssignment() {
-    // TODO
+    if (!dataLoaded) {
+        std::cout << "No data loaded. Please load a file first." << std::endl;
+        return;
+    }
+    
+    std::cout << "\n Running the Assignment... \n";
+    AssignmentSolver solver(data);
+    solver.solve();
+
 }
 
 void Menu::handleRiskAnalysis() {
-    // TODO
+    if (!dataLoaded) {
+        std::cout << "No data loaded. Please load a file first." << std::endl;
+        return;
+    }
+    
+    std::cout << "\n Running Risk Analysis... \n";
+    AssignmentSolver solver(data);
+    solver.riskAnalysis();
 }
