@@ -1,3 +1,4 @@
+#pragma once
 #include "ConferenceGraph.h"
 
 enum FlowAlgorithm {
@@ -17,6 +18,13 @@ public:
     void riskAnalysis() const;
     
     void generateGraphviz(const std::string& filename) const;
+
+    void printAssignments() const;
+
+    // Returns {flow, capacity} for a given submission ID (data ID, not node ID)
+    std::pair<double, double> getSubmissionFlow(int submissionId) const;
+    // Returns {flow, capacity} for a given reviewer ID (data ID, not node ID)
+    std::pair<double, double> getReviewerFlow(int reviewerId) const;
 private:
     const ConferenceData& data;
     Graph<int> flowGraph;

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <map>
 
 // -------------------------- Data Structures ---------------------------------
 // Internal structs to manage the multi-block output formatting
@@ -40,6 +41,9 @@ void AssignmentSolver::solve(FlowAlgorithm algo) {
     } else {
         throw std::invalid_argument("Unsupported flow algorithm specified.");
     }
+
+    // Task 2.1: Show the results in the console
+    printAssignments();
 
     // Task 2.1: Export the results if requested
     if (data.control.generateAssignments > 0) {
@@ -284,5 +288,107 @@ void AssignmentSolver::generateGraphviz(const std::string& filename) const {
 
     out << "}\n";
     out.close();
-    std::cout << "Graphviz map successfully generated: " << filename << "\n";
+}
+
+void AssignmentSolver::printAssignments() const {
+    std::cout << "\n--- Assignment Results (Result Path) ---\n";
+    bool found = false;
+
+    int sourceId = 0;
+    int sinkId = static_cast<int>(data.submissions.size() + data.reviewers.size() + 1);
+    
+    // Use a vector for O(1) access and fewer allocations - Senior Mentor optimization
+    std::vector<std::pair<double, double>> nodeAgg(sinkId + 1, {0.0, 0.0});
+
+    Vertex<int>* srcVertex = flowGraph.findVertex(sourceId);
+    if (srcVertex) {
+        for (auto e : srcVertex->getAdj()) {
+            int destId = e->getDest()->getInfo();
+            if (destId >= 0 && destId <= sinkId) {
+                nodeAgg[destId] = {e->getFlow(), e->getWeight()};
+            }
+        }
+    }
+
+    // Reviewers are nodes from N+1 to M. They connect to Sink (M+1).
+    for (size_t i = 0; i < data.reviewers.size(); i++) {
+        int revNodeId = static_cast<int>(i + 1 + data.submissions.size());
+        Vertex<int>* revVertex = flowGraph.findVertex(revNodeId);
+        if (revVertex) {
+            for (auto e : revVertex->getAdj()) {
+                if (e->getDest()->getInfo() == sinkId) {
+                    nodeAgg[revNodeId] = {e->getFlow(), e->getWeight()};
+                    break;
+                }
+            }
+        }
+    }
+
+    for (size_t i = 0; i < data.submissions.size(); i++) {
+        int subNodeId = static_cast<int>(i + 1);
+        Vertex<int>* subVertex = flowGraph.findVertex(subNodeId);
+        if (subVertex == nullptr) continue;
+
+        const Submission& actualSub = data.submissions[i];
+
+        for (Edge<int>* edge : subVertex->getAdj()) {
+            if (edge->getFlow() == 1.0) {
+                int revNodeId = edge->getDest()->getInfo();
+                int revIndex = getReviewerRealId(revNodeId);
+                const Reviewer& actualRev = data.reviewers[revIndex];
+
+                std::cout << "source -> [" << actualSub.submissionId << " : " 
+                          << (int)nodeAgg[subNodeId].first << "/" << (int)nodeAgg[subNodeId].second << "] -> [" 
+                          << actualRev.reviewerId << " : " 
+                          << (int)nodeAgg[revNodeId].first << "/" << (int)nodeAgg[revNodeId].second << "] -> sink" << std::endl;
+                found = true;
+            }
+        }
+    }
+
+    if (!found) {
+        std::cout << "No assignments found. Flow is 0." << std::endl;
+    }
+    std::cout << "-----------------------------------------\n" << std::endl;
+}
+std::pair<double, double> AssignmentSolver::getSubmissionFlow(int subId) const {
+    int subNodeId = -1;
+    for (size_t i = 0; i < data.submissions.size(); i++) {
+        if (data.submissions[i].submissionId == subId) {
+            subNodeId = static_cast<int>(i + 1);
+            break;
+        }
+    }
+    if (subNodeId == -1) return {0.0, 0.0};
+
+    Vertex<int>* srcVertex = flowGraph.findVertex(0);
+    if (srcVertex) {
+        for (auto e : srcVertex->getAdj()) {
+            if (e->getDest()->getInfo() == subNodeId) {
+                return {e->getFlow(), e->getWeight()};
+            }
+        }
+    }
+    return {0.0, 0.0};
+}
+
+std::pair<double, double> AssignmentSolver::getReviewerFlow(int revId) const {
+    int revNodeId = -1;
+    for (size_t i = 0; i < data.reviewers.size(); i++) {
+        if (data.reviewers[i].reviewerId == revId) {
+            revNodeId = static_cast<int>(i + 1 + data.submissions.size());
+            break;
+        }
+    }
+    if (revNodeId == -1) return {0.0, 0.0};
+
+    Vertex<int>* revVertex = flowGraph.findVertex(revNodeId);
+    if (revVertex) {
+        for (auto e : revVertex->getAdj()) {
+            if (e->getDest()->getInfo() == static_cast<int>(data.reviewers.size() + data.submissions.size() + 1)) {
+                return {e->getFlow(), e->getWeight()};
+            }
+        }
+    }
+    return {0.0, 0.0};
 }

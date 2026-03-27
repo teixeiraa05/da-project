@@ -5,9 +5,16 @@
 void Menu::run() {
     int choice;
     do {
+        std::string input;
         displayMenu();
         std::cout << "Enter your choice: ";
-        std::cin >> choice;
+        std::getline(std::cin, input);
+
+        try {
+            choice = std::stoi(input);
+        } catch (...) {
+            choice = -1; // Force default case in switch
+        }
 
         switch (choice) {
             case 1:
@@ -34,6 +41,9 @@ void Menu::run() {
             case 8:
                 handleRiskAnalysis();
                 break;
+            case 9:
+                handleShowLastAssignments();
+                break;
             case 0:
                 std::cout << "Exiting..." << std::endl;
                 break;
@@ -54,6 +64,7 @@ void Menu::displayMenu() {
     std::cout << " 6. Run Assignment (Edmonds-Karp)" << std::endl;
     std::cout << " 7. Run Assignment (Ford-Fulkerson)" << std::endl;
     std::cout << " 8. Run Risk Analysis" << std::endl;
+    std::cout << " 9. Show last assignments" << std::endl;
     std::cout << " 0. Exit" << std::endl;
     std::cout << "================================== " << std::endl;
 }
@@ -62,17 +73,30 @@ void Menu::displayMenu() {
 void Menu::handleLoadFile() {
     std::string filepath;
     std::cout << "Enter file path: ";
-    std::cin >> filepath;
+    std::getline(std::cin, filepath);
+    
+    // Trim potential whitespace from the edges
+    filepath.erase(0, filepath.find_first_not_of(" \t\n\r"));
+    filepath.erase(filepath.find_last_not_of(" \t\n\r") + 1);
+
+    if (filepath.empty()) {
+        std::cout << "Error: File path cannot be empty." << std::endl;
+        return;
+    }
     Parser parser;
 
     ConferenceData loadedData = parser.parseFile(filepath);
 
     if (loadedData.submissions.empty() && loadedData.reviewers.empty()) {
         this->dataLoaded = false;
+        std::cout << "Warning: No data loaded. Check if the file exists and has the correct format (.csv)." << std::endl;
     } else {
         this->data = loadedData;
         this->dataLoaded = true;
-        std::cout << "Data loaded successfully. " << this->data.submissions.size() << " submissions found." << std::endl;
+        this->assignmentGenerated = false;
+        this->solver.reset();
+        std::cout << "Data loaded successfully. " << this->data.submissions.size() << " submissions and "
+                  << this->data.reviewers.size() << " reviewers found." << std::endl;
     }
 }
 
@@ -84,8 +108,12 @@ void Menu::handleShowSubmissions() {
 
     std::cout << "\nSubmissions:\n";
     for (const auto& sub : data.submissions) {
-        std::cout << "ID: " << sub.submissionId 
-                  << ", Primary Domain: " << sub.primary 
+        std::cout << "ID: " << sub.submissionId;
+        if (assignmentGenerated && solver) {
+            auto flowCap = solver->getSubmissionFlow(sub.submissionId);
+            std::cout << " [" << (int)flowCap.first << "/" << (int)flowCap.second << "]";
+        }
+        std::cout << ", Primary Domain: " << sub.primary 
                   << ", Secondary Domain: " << sub.secondary 
                   << std::endl;
     }
@@ -99,8 +127,12 @@ void Menu::handleShowReviewers() {
 
     std::cout << "\nReviewers:\n";
     for (const auto& rev : data.reviewers) {
-        std::cout << "ID: " << rev.reviewerId 
-                  << ", Primary Domain: " << rev.primary 
+        std::cout << "ID: " << rev.reviewerId;
+        if (assignmentGenerated && solver) {
+            auto flowCap = solver->getReviewerFlow(rev.reviewerId);
+            std::cout << " [" << (int)flowCap.first << "/" << (int)flowCap.second << "]";
+        }
+        std::cout << ", Primary Domain: " << rev.primary 
                   << ", Secondary Domain: " << rev.secondary 
                   << std::endl;
     }
@@ -136,9 +168,9 @@ void Menu::handleRunAssignmentEdmondsKarp() {
     }
     
     std::cout << "\nRunning the Assignment using Edmonds-Karp's Algorithm...\n";
-    AssignmentSolver solver(data);
-    solver.solve(FlowAlgorithm::EDMONDS_KARP);
-
+    solver = std::make_unique<AssignmentSolver>(data);
+    solver->solve(FlowAlgorithm::EDMONDS_KARP);
+    assignmentGenerated = true;
 }
 
 void Menu::handleRunAssignmentFordFulkerson() {
@@ -148,8 +180,21 @@ void Menu::handleRunAssignmentFordFulkerson() {
     }
 
     std::cout << "\nRunning the Assignment using Ford Fulkerson's Algorithm...\n";
-    AssignmentSolver solver(data);
-    solver.solve(FlowAlgorithm::FORD_FULKERSON);
+    solver = std::make_unique<AssignmentSolver>(data);
+    solver->solve(FlowAlgorithm::FORD_FULKERSON);
+    assignmentGenerated = true;
+}
+
+void Menu::handleShowLastAssignments() {
+    if (!dataLoaded) {
+        std::cout << "No data loaded. Please load a file first." << std::endl;
+        return;
+    }
+    if (!assignmentGenerated || !solver) {
+        std::cout << "No assignments generated yet. Run an algorithm first." << std::endl;
+        return;
+    }
+    solver->printAssignments();
 }
 
 void Menu::handleRiskAnalysis() {
