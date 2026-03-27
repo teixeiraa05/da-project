@@ -1,5 +1,6 @@
 #pragma once
 #include "ConferenceGraph.h"
+#include <vector>
 
 enum FlowAlgorithm {
     FORD_FULKERSON,
@@ -15,7 +16,7 @@ public:
     //Exports the assignments to a CSV file. Format: submissionId, reviewerId, matchDomain and reviewerId, submissionId, matchDomain
     void exportAssignments(const std::string& filename) const;
 
-    void riskAnalysis() const;
+    std::vector<int> riskAnalysis() const;
     
     void generateGraphviz(const std::string& filename) const;
 

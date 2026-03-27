@@ -203,7 +203,25 @@ void Menu::handleRiskAnalysis() {
         return;
     }
 
+    if (data.control.riskAnalysis == 0) {
+        std::cout << "Risk analysis is disabled in the control settings.\n";
+        return;
+    }
+
     std::cout << "\nRunning Risk Analysis...\n";
     AssignmentSolver solver(data);
-    solver.riskAnalysis();
+    std::vector<int> riskyReviewers = solver.riskAnalysis();
+
+    std::cout << "\n--- Risk Analysis Results ---\n";
+    if (riskyReviewers.empty()) {
+        std::cout << "No risky reviewers found.\n";
+    } else {
+        std::cout << "Found " << riskyReviewers.size() << " risky reviewer(s): ";
+        for (size_t i = 0; i < riskyReviewers.size(); i++) {
+            std::cout << riskyReviewers[i] << (i == riskyReviewers.size() - 1 ? "" : ", ");
+        }
+        std::cout << "\n";
+    }
+    std::cout << "Results appended to: " << data.control.outputFileName << "\n";
+    std::cout << "-----------------------------\n";
 }

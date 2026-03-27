@@ -137,8 +137,9 @@ void AssignmentSolver::exportAssignments(const std::string& filename) const {
     outFile.close();
 }
 
-void AssignmentSolver::riskAnalysis() const {
-    if (data.control.riskAnalysis == 0) return;
+std::vector<int> AssignmentSolver::riskAnalysis() const {
+    std::vector<int> riskyReviewers;
+    if (data.control.riskAnalysis == 0) return riskyReviewers;
 
     int sourceId = 0;
     int sinkId = static_cast<int>(data.reviewers.size() + data.submissions.size() + 1);
@@ -151,7 +152,7 @@ void AssignmentSolver::riskAnalysis() const {
         for (auto e : s_orig->getAdj()) initialFlow += static_cast<int>(e->getFlow());
     }
 
-    std::vector<int> riskyReviewers;
+
     
     // Only proceed if the problem was solvable with everyone present
     if (initialFlow >= totalRequired) {
@@ -194,6 +195,8 @@ void AssignmentSolver::riskAnalysis() const {
         }
         outFile.close();
     }
+    
+    return riskyReviewers;
 }
 
 // -------------------------- HELPER METHODS ---------------------------------
