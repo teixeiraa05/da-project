@@ -1,5 +1,9 @@
 #include "ConferenceGraph.h"
-#include "../include/FlowAlgorithm.h"
+
+enum FlowAlgorithm {
+    FORD_FULKERSON,
+    EDMONDS_KARP
+};
 
 class AssignmentSolver {
 public:
