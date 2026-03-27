@@ -9,7 +9,7 @@ int main(int argc, char* argv[]) {
         
         Parser parser;
         ConferenceData data = parser.parseFile(inputFile);
-        if (data.submissions.empty() && data.reviewers.empty()) return 1;
+        if (data.submissions.empty() || data.reviewers.empty()) return 1;
 
         AssignmentSolver solver(data);
         solver.solve();

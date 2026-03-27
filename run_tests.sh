@@ -59,7 +59,7 @@ for i in {1..14}; do
     
     # Clean up the generated file for the next loop iteration
     rm -f "$GENERATED_FILE"
-    rm -rf "output_dataset${i}.dot"  # Instruction to quickly clean up any generated .dot files
+    #rm -rf "output_dataset${i}.dot"  # Instruction to quickly clean up any generated .dot files
 done
 
 echo "========================================="

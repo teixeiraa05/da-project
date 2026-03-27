@@ -227,17 +227,17 @@ void AssignmentSolver::generateGraphviz(const std::string& filename) const {
     for (auto v : flowGraph.getVertexSet()) {
         int id = v->getInfo();
         std::string label;
-        std::string shape = "box";
+        std::string shape = "circle";
         std::string fillcolor = "lightcyan";
 
         if (id == sourceId) {
             label = "SOURCE";
-            shape = "ellipse";
+            shape = "circle";
             fillcolor = "lightgreen";
         } 
         else if (id == sinkId) {
             label = "SINK";
-            shape = "ellipse";
+            shape = "circle";
             fillcolor = "lightcoral";
         } 
         else if (id <= static_cast<int>(data.submissions.size())) {
