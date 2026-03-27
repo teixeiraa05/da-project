@@ -2,9 +2,10 @@
 .vscode/
 
 # Compiled binaries
-main
-test_parser
-da_project
+run_normal
+run_tests
+run-batch
+
 *.o
 *.out
 *.dot

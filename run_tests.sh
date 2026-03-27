@@ -2,7 +2,7 @@
 
 # ==============================================================================
 # CONFIGURATION
-EXEC="./da_project" 
+EXEC="./run_tests" 
 GENERATED_FILE="output.csv" 
 # ==============================================================================
 
@@ -10,7 +10,7 @@ echo "========================================="
 echo "Compiling the project..."
 echo "========================================="
 
-# 1. Compile all .cpp files inside Code/src/ and output to da_project
+# 1. Compile all .cpp files inside Code/src/ and output to run_tests
 g++ Code/src/*.cpp -o $EXEC
 
 # Check if the compilation command threw an error
@@ -59,7 +59,7 @@ for i in {1..14}; do
     
     # Clean up the generated file for the next loop iteration
     rm -f "$GENERATED_FILE"
-    #rm -rf "output_dataset${i}.dot"  # Instruction to quickly clean up any generated .dot files
+    rm -rf "output_dataset${i}.dot"  # Instruction to quickly clean up any generated .dot files
 done
 
 echo "========================================="
