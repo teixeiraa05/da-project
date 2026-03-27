@@ -1,7 +1,8 @@
 #pragma once
 #include <iostream>
-#include <string>
 #include "Parser.h"
+#include "AssignmentSolver.h"
+#include <memory>
 
 class Menu {
     public:
@@ -12,6 +13,7 @@ class Menu {
         bool dataLoaded = false;
         bool assignmentGenerated = false;
         ConferenceData data;
+        std::unique_ptr<AssignmentSolver> solver;
 
         void displayMenu();
         void handleLoadFile();
@@ -25,6 +27,7 @@ class Menu {
         //Assignment
         void handleRunAssignmentEdmondsKarp();
         void handleRunAssignmentFordFulkerson();
+        void handleShowLastAssignments();
 
         //Risk analysis
         void handleRiskAnalysis();
