@@ -1,5 +1,5 @@
 #include "../include/AssignmentSolver.h"
-#include "../include/MaxFlow.h"
+#include "../include/EdmondsKarp.h"
 #include <fstream>
 #include <iostream>
 #include <algorithm>
