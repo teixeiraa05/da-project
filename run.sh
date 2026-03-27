@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Compiling..."
-g++ -Wall -I Code/include Code/src/*.cpp -o main
+g++ -Wall -I Code/include Code/src/*.cpp -o run_normal
 
 # Check if compilation was successful
 if [ $? -eq 0 ]; then

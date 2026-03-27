@@ -23,7 +23,8 @@ class Menu {
         void handleShowControl();
 
         //Assignment
-        void handleRunAssignment();
+        void handleRunAssignmentEdmondsKarp();
+        void handleRunAssignmentFordFulkerson();
 
         //Risk analysis
         void handleRiskAnalysis();

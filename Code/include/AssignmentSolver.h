@@ -1,11 +1,15 @@
 #include "ConferenceGraph.h"
 
+enum FlowAlgorithm {
+    FORD_FULKERSON,
+    EDMONDS_KARP
+};
 
 class AssignmentSolver {
 public:
     AssignmentSolver(const ConferenceData& data);
     
-    void solve();
+    void solve(FlowAlgorithm algo = FlowAlgorithm::FORD_FULKERSON);
 
     //Exports the assignments to a CSV file. Format: submissionId, reviewerId, matchDomain and reviewerId, submissionId, matchDomain
     void exportAssignments(const std::string& filename) const;

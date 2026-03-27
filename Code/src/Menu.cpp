@@ -26,9 +26,12 @@ void Menu::run() {
                 handleShowControl();
                 break;
             case 6:
-                handleRunAssignment();
+                handleRunAssignmentEdmondsKarp();
                 break;
             case 7:
+                handleRunAssignmentFordFulkerson();
+                break;
+            case 8:
                 handleRiskAnalysis();
                 break;
             case 0:
@@ -48,8 +51,9 @@ void Menu::displayMenu() {
     std::cout << " 3. Show Reviewers" << std::endl;
     std::cout << " 4. Show Parameters" << std::endl;
     std::cout << " 5. Show Control Settings" << std::endl;
-    std::cout << " 6. Run Assignment" << std::endl;
-    std::cout << " 7. Run Risk Analysis" << std::endl;
+    std::cout << " 6. Run Assignment (Edmonds-Karp)" << std::endl;
+    std::cout << " 7. Run Assignment (Ford-Fulkerson)" << std::endl;
+    std::cout << " 8. Run Risk Analysis" << std::endl;
     std::cout << " 0. Exit" << std::endl;
     std::cout << "================================== " << std::endl;
 }
@@ -125,16 +129,27 @@ void Menu::handleShowControl() {
     std::cout << "Output File Name: " << data.control.outputFileName << std::endl;
 }
 
-void Menu::handleRunAssignment() {
+void Menu::handleRunAssignmentEdmondsKarp() {
     if (!dataLoaded) {
         std::cout << "No data loaded. Please load a file first." << std::endl;
         return;
     }
     
-    std::cout << "\nRunning the Assignment...\n";
+    std::cout << "\nRunning the Assignment using Edmonds-Karp's Algorithm...\n";
     AssignmentSolver solver(data);
-    solver.solve();
+    solver.solve(FlowAlgorithm::EDMONDS_KARP);
 
+}
+
+void Menu::handleRunAssignmentFordFulkerson() {
+    if (!dataLoaded) {
+        std::cout << "No data loaded. Please load a file first." << std::endl;
+        return;
+    }
+
+    std::cout << "\nRunning the Assignment using Ford Fulkerson's Algorithm...\n";
+    AssignmentSolver solver(data);
+    solver.solve(FlowAlgorithm::FORD_FULKERSON);
 }
 
 void Menu::handleRiskAnalysis() {
@@ -142,7 +157,7 @@ void Menu::handleRiskAnalysis() {
         std::cout << "No data loaded. Please load a file first." << std::endl;
         return;
     }
-    
+
     std::cout << "\nRunning Risk Analysis...\n";
     AssignmentSolver solver(data);
     solver.riskAnalysis();
