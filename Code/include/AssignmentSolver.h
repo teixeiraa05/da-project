@@ -11,7 +11,8 @@ public:
     void exportAssignments(const std::string& filename) const;
 
     void riskAnalysis() const;
-
+    
+    void generateGraphviz(const std::string& filename) const;
 private:
     const ConferenceData& data;
     Graph<int> flowGraph;

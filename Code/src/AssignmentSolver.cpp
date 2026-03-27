@@ -37,6 +37,18 @@ void AssignmentSolver::solve() {
     // Task 2.1: Export the results if requested
     if (data.control.generateAssignments > 0) {
         exportAssignments(data.control.outputFileName);
+
+        std::string dotFilename = data.control.outputFileName;
+        size_t dotPos = dotFilename.find_last_of('.');
+        
+        if (dotPos != std::string::npos) {
+            // Replace ".csv" (or whatever extension) with ".dot"
+            dotFilename = dotFilename.substr(0, dotPos) + ".dot";
+        } else {
+            // If there's no extension, just append ".dot"
+            dotFilename += ".dot";
+        }
+        generateGraphviz(dotFilename);
     }
 }
 
@@ -183,4 +195,87 @@ int AssignmentSolver::getSubmissionRealId(int nodeId) const {
 int AssignmentSolver::getReviewerRealId(int nodeId) const {
     // Reviewer IDs in graph start after Submissions (1 to N)
     return nodeId - 1 - static_cast<int>(data.submissions.size());
+}
+
+// --------------------------- GRAPHVIZ GENERATION ---------------------------------
+void AssignmentSolver::generateGraphviz(const std::string& filename) const {
+    std::ofstream out(filename);
+    if (!out.is_open()) {
+        std::cerr << "Error opening file for Graphviz output!" << std::endl;
+        return;
+    }
+
+    out << "digraph ConferenceFlow {\n";
+    out << "    rankdir=LR;\n"; // Left-to-Right layout
+    
+    // Default styling for nodes
+    out << "    node [fontname=\"Helvetica\", style=filled];\n\n";
+
+    int sourceId = 0;
+    int sinkId = static_cast<int>(data.submissions.size() + data.reviewers.size() + 1);
+
+    // ---------------------------------------------------------
+    // STEP 1: Define all the Nodes and their Custom Labels
+    // ---------------------------------------------------------
+    for (auto v : flowGraph.getVertexSet()) {
+        int id = v->getInfo();
+        std::string label;
+        std::string shape = "box";
+        std::string fillcolor = "lightcyan";
+
+        if (id == sourceId) {
+            label = "SOURCE";
+            shape = "ellipse";
+            fillcolor = "lightgreen";
+        } 
+        else if (id == sinkId) {
+            label = "SINK";
+            shape = "ellipse";
+            fillcolor = "lightcoral";
+        } 
+        else if (id <= static_cast<int>(data.submissions.size())) {
+            // It's a Submission! Look up its real ID.
+            int subIdx = getSubmissionRealId(id);
+            label = "Sub " + std::to_string(data.submissions[subIdx].submissionId);
+            fillcolor = "lightyellow";
+        } 
+        else {
+            // It's a Reviewer! Look up their real ID.
+            int revIdx = getReviewerRealId(id);
+            // Using \\n creates a line break inside the Graphviz node
+            label = "Rev " + std::to_string(data.reviewers[revIdx].reviewerId);
+            fillcolor = "lightblue";
+        }
+
+        // Print the node definition
+        out << "    \"" << id << "\" [label=\"" << label << "\", shape=\"" << shape 
+            << "\", fillcolor=\"" << fillcolor << "\"];\n";
+    }
+
+    out << "\n    // ---------------------------------------------------------\n";
+    out << "    // STEP 2: Draw the Edges\n";
+    out << "    // ---------------------------------------------------------\n";
+
+    for (auto v : flowGraph.getVertexSet()) {
+        for (auto edge : v->getAdj()) {
+            
+            // Assuming your capacity is stored in getWeight() as per your previous snippet
+            if (edge->getWeight() > 0) { 
+                out << "    \"" << v->getInfo() << "\" -> \"" << edge->getDest()->getInfo() << "\" ";
+                
+                // Color code: Green if flow > 0, Gray/Dashed if flow is 0
+                if (edge->getFlow() > 0) {
+                    out << "[label=\" " << edge->getFlow() << "/" << edge->getWeight() 
+                        << "\", color=darkgreen, penwidth=2];\n";
+                } else {
+                    out << "[label=\" " << edge->getFlow() << "/" << edge->getWeight() 
+                        << "\", style=dashed, color=gray];\n";
+                }
+            }
+        }
+    }
+
+    out << "}\n";
+    out.close();
+    std::cout << "Graphviz map successfully generated: " << filename << "\n";
 }

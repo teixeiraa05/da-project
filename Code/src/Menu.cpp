@@ -131,7 +131,7 @@ void Menu::handleRunAssignment() {
         return;
     }
     
-    std::cout << "\n Running the Assignment... \n";
+    std::cout << "\nRunning the Assignment...\n";
     AssignmentSolver solver(data);
     solver.solve();
 
@@ -143,7 +143,7 @@ void Menu::handleRiskAnalysis() {
         return;
     }
     
-    std::cout << "\n Running Risk Analysis... \n";
+    std::cout << "\nRunning Risk Analysis...\n";
     AssignmentSolver solver(data);
     solver.riskAnalysis();
 }
