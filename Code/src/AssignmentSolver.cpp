@@ -1,5 +1,6 @@
 #include "../include/AssignmentSolver.h"
 #include "../include/EdmondsKarp.h"
+#include "../include/FordFulkerson.h"
 #include <fstream>
 #include <iostream>
 #include <algorithm>
@@ -26,13 +27,19 @@ AssignmentSolver::AssignmentSolver(const ConferenceData& data) : data(data) {
     this->flowGraph = buildGraph.buildGraph();
 }
 
-void AssignmentSolver::solve() {
+void AssignmentSolver::solve(FlowAlgorithm algo) {
     // Source is always 0, Sink is the last node
     int sourceId = 0;
     int sinkId = static_cast<int>(data.reviewers.size() + data.submissions.size() + 1);
 
     // Run the Max Flow algorithm
-    edmondsKarp(&flowGraph, sourceId, sinkId);
+    if (algo == FlowAlgorithm::FORD_FULKERSON) {
+        fordFulkerson(&flowGraph, sourceId, sinkId);
+    } else if (algo == FlowAlgorithm::EDMONDS_KARP) {
+        edmondsKarp(&flowGraph, sourceId, sinkId);
+    } else {
+        throw std::invalid_argument("Unsupported flow algorithm specified.");
+    }
 
     // Task 2.1: Export the results if requested
     if (data.control.generateAssignments > 0) {

@@ -1,11 +1,11 @@
 #include "ConferenceGraph.h"
-
+#include "../include/FlowAlgorithm.h"
 
 class AssignmentSolver {
 public:
     AssignmentSolver(const ConferenceData& data);
     
-    void solve();
+    void solve(FlowAlgorithm algo = FlowAlgorithm::FORD_FULKERSON);
 
     //Exports the assignments to a CSV file. Format: submissionId, reviewerId, matchDomain and reviewerId, submissionId, matchDomain
     void exportAssignments(const std::string& filename) const;
