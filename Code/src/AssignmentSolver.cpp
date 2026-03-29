@@ -8,17 +8,26 @@
 #include <map>
 
 // -------------------------- Data Structures ---------------------------------
-// Internal structs to manage the multi-block output formatting
+// Internal structs to manage multi-block output formatting.
+
+/**
+ * @struct MatchRecord
+ * @brief Stores one successful reviewer-submission assignment entry.
+ */
 struct MatchRecord {
-    int subId;
-    int revId;
-    int matchCode;
+    int subId;      ///< Submission ID from input data.
+    int revId;      ///< Reviewer ID assigned to the submission.
+    int matchCode;  ///< Domain match code returned by domainsMatch().
 };
 
+/**
+ * @struct MissingRecord
+ * @brief Stores one under-reviewed submission entry for output reporting.
+ */
 struct MissingRecord {
-    int subId;
-    int domain;
-    int missingCount;
+    int subId;         ///< Submission ID that is under-reviewed.
+    int domain;        ///< Submission primary domain.
+    int missingCount;  ///< Number of reviews still missing for this submission.
 };
 
 // -------------------------- ASSIGNMENT SOLVER ---------------------------------
@@ -137,7 +146,7 @@ void AssignmentSolver::exportAssignments(const std::string& filename) const {
     outFile.close();
 }
 
-std::vector<int> AssignmentSolver::riskAnalysis() const {
+std::vector<int> AssignmentSolver::riskAnalysis(const std::string& filename) const {
     std::vector<int> riskyReviewers;
     if (data.control.riskAnalysis == 0) return riskyReviewers;
 
