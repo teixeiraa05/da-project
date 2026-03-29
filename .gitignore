@@ -5,7 +5,13 @@
 run_normal
 run_tests
 run-batch
+main
 
 *.o
 *.out
 *.dot
+
+Documentation/html
+Documentation/latex
+Doxyfile
+Code/mainpage.dox
