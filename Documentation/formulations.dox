@@ -1,0 +1,248 @@
+/**
+ * @page formulations Algorithm Formulations
+ *
+ * @tableofcontents
+ *
+ * This page describes the theoretical formulations and algorithmic approaches
+ * for the more complex variants of the reviewer assignment problem.
+ *
+ * - @subpage risk_analysis_k
+ * - @subpage general_formulation
+ */
+
+/**
+ * @page risk_analysis_k T2.3 — Risk Analysis = K (K > 1)
+ *
+ * @tableofcontents
+ *
+ * @section ra_problem Problem Statement
+ *
+ * Given a valid reviewer assignment, determine whether the assignment remains
+ * feasible if <b>any K reviewers simultaneously fail</b> to complete their reviews.
+ * A reviewer "failing" means all their assigned submissions lose those reviews entirely.
+ *
+ * @section ra_approach Approach
+ *
+ * The naive approach is to enumerate all possible subsets of K reviewers,
+ * remove them and rerun Max-Flow for each subset. However this has complexity
+ * O(C(M,K) × MaxFlow) which grows exponentially with K.
+ *
+ * A more efficient approach combines Max-Flow with a <b>minimum vertex cut</b> formulation.
+ *
+ * @subsection ra_step1 Step 1 — Node Splitting
+ *
+ * Transform each reviewer node r into two nodes r_in and r_out connected
+ * by an internal edge with capacity 1:
+ *
+ * @code
+ * Source → Submission → r_in ──(1)──► r_out → Sink
+ * @endcode
+ *
+ * This encodes "this reviewer can be removed" as cutting the internal edge.
+ *
+ * @subsection ra_step2 Step 2 — Find Minimum K-Cut
+ *
+ * The problem reduces to finding the <b>minimum vertex cut</b> of size K
+ * in the reviewer layer. If the minimum vertex cut has size < K, then there
+ * exist K reviewers whose removal breaks the assignment.
+ *
+ * This can be solved using K successive max-flow computations on the node-split graph:
+ *
+ * @code
+ * for i = 1 to K:
+ *     find min-cut in current graph
+ *     remove the reviewer corresponding to the cut edge
+ *     update graph
+ *     if assignment no longer feasible:
+ *         report this set of reviewers as risky
+ * @endcode
+ *
+ * @subsection ra_step3 Step 3 — Enumerate Risky Sets
+ *
+ * For reporting, collect all sets of K reviewers whose removal breaks feasibility:
+ *
+ * @code
+ * RiskySet = {}
+ * for each combination C of K reviewers:
+ *     build graph without reviewers in C
+ *     run MaxFlow
+ *     if totalFlow < expectedFlow:
+ *         RiskySet.add(C)
+ * report RiskySet sorted
+ * @endcode
+ *
+ * @section ra_complexity Complexity Analysis
+ *
+ * | Approach                  | Time Complexity          | Space    |
+ * |---------------------------|--------------------------|----------|
+ * | Naive enumeration         | O(C(M,K) × V × E²)      | O(V+E)   |
+ * | Min vertex cut (K passes) | O(K × V × E²)           | O(V+E)   |
+ *
+ * Where:
+ * - M = number of reviewers
+ * - V = N + M + 2 (total vertices)
+ * - E = O(N×M) (total edges)
+ * - C(M,K) = M! / (K! × (M-K)!) grows exponentially
+ *
+ * The min vertex cut approach is <b>polynomial in K</b> making it practical
+ * for small K, while the naive approach becomes infeasible even for moderate
+ * values like K=5 with 20 reviewers (C(20,5) = 15504 iterations).
+ *
+ * @section ra_example Non-Trivial Example
+ *
+ * @subsection ra_input Input
+ * @code
+ * #Submissions
+ * 1, "Paper A", Author A, a@up.pt, 1,
+ * 2, "Paper B", Author B, b@up.pt, 1,
+ * 3, "Paper C", Author C, c@up.pt, 1,
+ * #
+ * #Reviewers
+ * 1, Reviewer One,   r1@up.pt, 1,
+ * 2, Reviewer Two,   r2@up.pt, 1,
+ * 3, Reviewer Three, r3@up.pt, 1,
+ * #Parameters
+ * MinReviewsPerSubmission, 2
+ * MaxReviewsPerReviewer, 3
+ * PrimaryReviewerExpertise, 1
+ * SecondaryReviewerExpertise, 0
+ * PrimarySubmissionDomain, 1
+ * SecondarySubmissionDomain, 0
+ * #Control
+ * GenerateAssignments, 1
+ * RiskAnalysis, 2
+ * OutputFileName, "output.csv"
+ * @endcode
+ *
+ * @subsection ra_reasoning Why This Is Non-Trivial for K=2
+ *
+ * - 3 submissions × 2 reviews needed = 6 total reviews required
+ * - 3 reviewers × 3 max reviews = 9 total capacity available
+ * - Remove any 1 reviewer: 2 remaining × 3 max = 6 capacity → still feasible ✓
+ * - Remove any 2 reviewers: 1 remaining × 3 max = 3 capacity < 6 needed → infeasible ✗
+ *
+ * @subsection ra_output Expected Output
+ * @code
+ * #Risk Analysis: 2
+ * 1, 2
+ * 1, 3
+ * 2, 3
+ * @endcode
+ *
+ * All pairs are risky because with only 3 reviewers and MinReviewsPerSubmission=2,
+ * removing any 2 reviewers breaks feasibility.
+ */
+
+/**
+ * @page general_formulation T2.4 — General Formulation (Mode 3, All Domains)
+ *
+ * @tableofcontents
+ *
+ * @section gf_problem Problem Statement
+ *
+ * Find an assignment of submissions to reviewers considering
+ * <b>all domain combinations</b> (primary/secondary for both submissions
+ * and reviewers) that:
+ * - Gives every submission at least MinReviewsPerSubmission reviews
+ * - Assigns each reviewer at most MaxReviewsPerReviewer submissions
+ * - <b>Maximises primary domain matches</b> over secondary domain matches
+ *
+ * @section gf_why Why Simple Max-Flow Is Insufficient
+ *
+ * A single Max-Flow pass on mode 3 finds <b>a</b> valid assignment but not
+ * the <b>optimal</b> one. Consider:
+ *
+ * @code
+ * Sub1 (primary=1)    Rev1 (primary=1, secondary=2)
+ * Sub2 (primary=2)    Rev2 (primary=3, secondary=1)
+ * @endcode
+ *
+ * Single pass might produce:
+ * @code
+ * Sub1 → Rev2 (via secondary match, domain 1)
+ * Sub2 → Rev1 (via secondary match, domain 2)
+ * @endcode
+ *
+ * But the optimal assignment is:
+ * @code
+ * Sub1 → Rev1 (via PRIMARY match, domain 1)  ← preferred
+ * Sub2 → Rev1 (via secondary match, domain 2)
+ * @endcode
+ *
+ * @section gf_approach1 Approach 1 — Min-Cost Max-Flow
+ *
+ * Model the problem as a <b>minimum cost maximum flow</b> problem by
+ * assigning costs to edges:
+ *
+ * @code
+ * Source → Submission:          cost = 0,  capacity = MinReviewsPerSubmission
+ * Sub → Rev (primary match):    cost = 0,  capacity = 1   ← preferred
+ * Sub → Rev (secondary match):  cost = 1,  capacity = 1   ← penalised
+ * Reviewer → Sink:              cost = 0,  capacity = MaxReviewsPerReviewer
+ * @endcode
+ *
+ * Running <b>MCMF (Min-Cost Max-Flow)</b> finds the maximum flow with minimum
+ * total cost, which naturally prioritises primary matches (cost=0) over
+ * secondary matches (cost=1).
+ *
+ * The algorithm uses Successive Shortest Paths with SPFA to find the cheapest
+ * augmenting path:
+ *
+ * @code
+ * while (augmenting path exists from Source to Sink):
+ *     find shortest (cheapest) path using SPFA
+ *     augment flow along that path
+ *     update residual graph
+ * @endcode
+ *
+ * @section gf_approach2 Approach 2 — Two-Pass Max-Flow (Practical Approximation)
+ *
+ * A simpler approach that achieves near-optimal results in practice:
+ *
+ * <b>Pass 1</b> — Build graph with only primary domain edges, run Max-Flow:
+ * @code
+ * Only add Sub→Rev edge if primary(Sub) == primary(Rev)
+ * Run Edmonds-Karp → saturates all primary matches first
+ * @endcode
+ *
+ * <b>Pass 2</b> — Add secondary edges for under-reviewed submissions, run Max-Flow again:
+ * @code
+ * For each submission with flow < MinReviewsPerSubmission:
+ *     add Sub→Rev edges for secondary domain matches
+ * Run Edmonds-Karp again → fills remaining gaps with secondary matches
+ * @endcode
+ *
+ * This guarantees primary matches are always preferred while remaining polynomial:
+ * @code
+ * O(2 × V × E²) = O(V × E²)
+ * @endcode
+ *
+ * @section gf_complexity Complexity Comparison
+ *
+ * | Approach              | Time                   | Optimality                          |
+ * |-----------------------|------------------------|-------------------------------------|
+ * | Single pass Max-Flow  | O(V × E²)              | No — secondary may displace primary |
+ * | Two-pass Max-Flow     | O(V × E²)              | Near-optimal — primary preferred    |
+ * | Min-Cost Max-Flow     | O(V × E² × log V)      | Optimal — guaranteed primary priority|
+ * | Brute force           | O(C(M,N) × N!)         | Exact but exponential               |
+ *
+ * Where E = O(N×M) in the worst case for mode 3, since every reviewer can
+ * potentially match every submission through some combination of domains.
+ *
+ * @section gf_hardness Why Mode 3 Is Fundamentally Harder
+ *
+ * In mode 1 the graph is <b>sparse</b> — each reviewer connects only to
+ * submissions in their exact primary domain. In mode 3 the graph becomes
+ * <b>dense</b> — a reviewer with primary=1 and secondary=2 can connect to
+ * all submissions with primary=1, secondary=1, primary=2, or secondary=2.
+ *
+ * In the worst case this yields O(N×M) edges compared to O(N+M) for mode 1,
+ * making E² grow from O((N+M)²) to O(N²M²) — a quadratic blowup in the
+ * exponent of the complexity.
+ *
+ * Furthermore the <b>optimal assignment problem</b> in mode 3 (maximising
+ * primary matches subject to flow constraints) is equivalent to a
+ * <b>weighted bipartite matching</b> problem, which in its general form
+ * requires the Hungarian algorithm or MCMF — both significantly more
+ * expensive than plain Max-Flow.
+ */
