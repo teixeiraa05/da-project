@@ -190,21 +190,30 @@ std::vector<int> AssignmentSolver::riskAnalysis(const std::string& filename) con
 
     std::sort(riskyReviewers.begin(), riskyReviewers.end());
 
-    // Append to the output file
-    std::ofstream outFile(data.control.outputFileName, std::ios::app);
-    if (outFile.is_open()) {
-        outFile << "#Risk Analysis: " << data.control.riskAnalysis << "\n";
-        if (riskyReviewers.empty()) {
-            outFile << "\n";
-        } else {
-            for (size_t i = 0; i < riskyReviewers.size(); i++) {
-                outFile << riskyReviewers[i] << (i == riskyReviewers.size() - 1 ? "" : ", ");
-            }
-            outFile << "\n";
+    auto writeResults = [&](std::ostream& out) {
+        out << "#Risk Analysis: " << data.control.riskAnalysis << "\n";
+        for (size_t i = 0; i < riskyReviewers.size(); i++) {
+            out << riskyReviewers[i] << (i == riskyReviewers.size() - 1 ? "" : ", ");
         }
-        outFile.close();
+        out << "\n";
+    };
+
+    if (!data.control.outputFileName.empty()) {
+        std::ofstream mainOut(data.control.outputFileName, std::ios::app);
+        if (mainOut.is_open()) {
+            writeResults(mainOut);
+            mainOut.close();
+        }
     }
-    
+
+    if (!filename.empty() && filename != data.control.outputFileName) {
+        std::ofstream riskOut(filename);
+        if (riskOut.is_open()) {
+            writeResults(riskOut);
+            riskOut.close();
+        }
+    }
+
     return riskyReviewers;
 }
 

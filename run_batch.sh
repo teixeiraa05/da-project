@@ -19,6 +19,10 @@ if [ "$#" -lt 1 ]; then
     exit 1
 fi
 
+if [ "$1" == "-b" ]; then
+    shift
+fi
+
 INPUT_FILE=$1
 RISK_FILE=${2:-""}   # optional, empty if not provided
 
