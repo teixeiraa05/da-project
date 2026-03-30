@@ -165,14 +165,18 @@ std::vector<int> AssignmentSolver::riskAnalysis(const std::string& filename) con
     
     // Only proceed if the problem was solvable with everyone present
     if (initialFlow >= totalRequired) {
+        Graph<int> tempGraph(flowGraph);
+
         for (size_t i = 0; i < data.reviewers.size(); i++) {
-            ConferenceGraph tempBuilder(data);
-            Graph<int> tempGraph = tempBuilder.buildGraph();
-            
-            // Calculate the Graph Node ID for the current reviewer to remove them
-            int nodeToDelete = static_cast<int>(i + 1 + data.submissions.size());
-            tempGraph.removeVertex(nodeToDelete);
-            
+            int reviewerNodeId = static_cast<int>(i + 1 + data.submissions.size());
+
+            // Zero out edges to/from this reviewer
+            Vertex<int>* rev = tempGraph.findVertex(reviewerNodeId);
+            for (auto e : rev->getIncoming()) {
+                tempGraph.setEdgeWeight(e->getOrig()->getInfo(), reviewerNodeId, 0);
+            }
+            tempGraph.setEdgeWeight(reviewerNodeId, sinkId, 0);
+
             edmondsKarp(&tempGraph, sourceId, sinkId);
 
             int totalFlow = 0;
@@ -185,6 +189,12 @@ std::vector<int> AssignmentSolver::riskAnalysis(const std::string& filename) con
             if (totalFlow < totalRequired) {
                 riskyReviewers.push_back(data.reviewers[i].reviewerId);
             }
+
+            // Restore edge weights
+            for (auto e : rev->getIncoming()) {
+                tempGraph.setEdgeWeight(e->getOrig()->getInfo(), reviewerNodeId, 1);
+            }
+            tempGraph.setEdgeWeight(reviewerNodeId, sinkId, data.params.maxReviewsPerReviewer);
         }
     }
 

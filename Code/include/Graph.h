@@ -23,6 +23,7 @@
 #include <queue>
 #include <limits>
 #include <algorithm>
+#include <unordered_map>
 
 template <class T>
 class Edge;
@@ -176,6 +177,9 @@ protected:
      * @complexity Space: O(1).
      */
     void deleteEdge(Edge<T>* edge);
+
+    template <class U>
+    friend class Graph;
 };
 
 /********************** Edge  ****************************/
@@ -256,6 +260,12 @@ public:
      */
     void setFlow(double flow);
 
+    /**
+     * @brief Sets the weight (capacity) of this edge.
+     * @param w New weight value.
+     */
+    void setWeight(double w);
+
 protected:
     Vertex<T>* dest;              ///< Destination vertex
     double     weight;            ///< Edge weight / capacity
@@ -288,6 +298,17 @@ protected:
 template <class T>
 class Graph {
 public:
+    /**
+     * @brief Default constructor.
+     */
+    Graph() = default;
+
+    /**
+     * @brief Deep copy constructor — creates independent copy with re-linked reverse edges.
+     * @param other Graph to copy.
+     */
+    Graph(const Graph<T>& other);
+
     /**
      * @brief Destructor — frees all vertex memory and distance/path matrices.
      * @complexity Time: O(V + E). Space: O(1).
@@ -355,6 +376,16 @@ public:
      * @complexity Time: O(V). Space: O(1).
      */
     bool addBidirectionalEdge(const T& sourc, const T& dest, double w);
+
+    /**
+     * @brief Sets the weight of the edge from sourc to dest and its reverse.
+     * @param sourc Info value of the source vertex.
+     * @param dest  Info value of the destination vertex.
+     * @param w     New weight / capacity.
+     * @return true if the edge was found and updated, false otherwise.
+     * @complexity Time: O(V + E). Space: O(1).
+     */
+    bool setEdgeWeight(const T& sourc, const T& dest, double w);
 
     /**
      * @brief Returns the number of vertices in the graph.
@@ -603,6 +634,11 @@ void Edge<T>::setFlow(double flow) {
     this->flow = flow;
 }
 
+template <class T>
+void Edge<T>::setWeight(double w) {
+    this->weight = w;
+}
+
 /********************** Graph  ****************************/
 
 template <class T>
@@ -686,6 +722,50 @@ bool Graph<T>::addBidirectionalEdge(const T &sourc, const T &dest, double w) {
     e1->setReverse(e2);
     e2->setReverse(e1);
     return true;
+}
+
+template <class T>
+bool Graph<T>::setEdgeWeight(const T &sourc, const T &dest, double w) {
+    Vertex<T>* v = findVertex(sourc);
+    if (v == nullptr) return false;
+    for (auto e : v->getAdj()) {
+        if (e->getDest()->getInfo() == dest) {
+            e->setWeight(w);
+            if (e->getReverse()) e->getReverse()->setWeight(w);
+            return true;
+        }
+    }
+    return false;
+}
+
+template <class T>
+Graph<T>::Graph(const Graph<T>& other) {
+    std::unordered_map<Vertex<T>*, Vertex<T>*> vertexMap;
+    std::unordered_map<Edge<T>*, Edge<T>*> edgeMap;
+
+    for (auto v : other.vertexSet) {
+        auto newV = new Vertex<T>(v->getInfo());
+        vertexSet.push_back(newV);
+        vertexMap[v] = newV;
+    }
+
+    for (auto v : other.vertexSet) {
+        for (auto e : v->adj) {
+            auto newE = new Edge<T>(vertexMap[v], vertexMap[e->getDest()], e->getWeight());
+            newE->setFlow(e->getFlow());
+            vertexMap[v]->adj.push_back(newE);
+            vertexMap[e->getDest()]->incoming.push_back(newE);
+            edgeMap[e] = newE;
+        }
+    }
+
+    for (auto v : other.vertexSet) {
+        for (auto e : v->adj) {
+            if (e->getReverse() != nullptr) {
+                edgeMap[e]->setReverse(edgeMap[e->getReverse()]);
+            }
+        }
+    }
 }
 
 inline void deleteMatrix(int **m, int n) {
