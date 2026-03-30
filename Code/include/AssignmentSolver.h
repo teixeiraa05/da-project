@@ -1,6 +1,5 @@
 #pragma once
 #include "ConferenceGraph.h"
-#include <vector>
 #include "EdmondsKarp.h"
 #include "FordFulkerson.h"
 
@@ -94,10 +93,7 @@ public:
      * @complexity Space: O(A) for storing match records.
      */
     void exportAssignments(const std::string& filename) const;
-    
-    void generateGraphviz(const std::string& filename) const;
-    
-    void printAssignments() const;
+
     /**
      * @brief Performs risk analysis by simulating reviewer removal.
      *
@@ -120,14 +116,27 @@ public:
      *
     * @complexity Time: O(M * V * E^2) in the current implementation,
     *                   where M = number of reviewers.
-     * @complexity Space: O(N + M) per iteration for the temporary graph.
+     *
      */
-    std::vector<int> riskAnalysis(const std::string& riskFile = "") const;
+    void riskAnalysis(const std::string& riskFile = "") const;
 
-    // Returns {flow, capacity} for a given submission ID (data ID, not node ID)
-    std::pair<double, double> getSubmissionFlow(int submissionId) const;
-    // Returns {flow, capacity} for a given reviewer ID (data ID, not node ID)
-    std::pair<double, double> getReviewerFlow(int reviewerId) const;
+    /**
+    * @brief Generates a Graphviz DOT file visualizing the flow network.
+     *
+     * Nodes are colour coded:
+     * - Green:  Source
+     * - Red:    Sink
+     * - Yellow: Submission nodes
+     * - Blue:   Reviewer nodes
+     *
+     * Edges with flow > 0 are drawn in dark green with flow/capacity labels.
+     * Edges with flow = 0 are drawn as dashed grey lines.
+     *
+     * @param filename Path to the output .dot file.
+    * @complexity Time: O(V + E), where V = vertices and E = edges.
+     */
+    void generateGraphviz(const std::string& filename) const;
+
 private:
     const ConferenceData& data;  ///< Reference to the parsed conference data
     Graph<int> flowGraph;        ///< The flow network graph used for assignment
