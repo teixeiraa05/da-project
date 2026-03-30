@@ -310,6 +310,13 @@ public:
     Graph(const Graph<T>& other);
 
     /**
+     * @brief Copy assignment via copy-and-swap — deep copies with re-linked reverse edges.
+     * @param other Graph to copy.
+     * @return Reference to this graph.
+     */
+    Graph<T>& operator=(Graph<T> other);
+
+    /**
      * @brief Destructor — frees all vertex memory and distance/path matrices.
      * @complexity Time: O(V + E). Space: O(1).
      */
@@ -768,6 +775,14 @@ Graph<T>::Graph(const Graph<T>& other) {
     }
 }
 
+template <class T>
+Graph<T>& Graph<T>::operator=(Graph<T> other) {
+    std::swap(vertexSet, other.vertexSet);
+    std::swap(distMatrix, other.distMatrix);
+    std::swap(pathMatrix, other.pathMatrix);
+    return *this;
+}
+
 inline void deleteMatrix(int **m, int n) {
     if (m != nullptr) {
         for (int i = 0; i < n; i++)
@@ -788,6 +803,15 @@ inline void deleteMatrix(double **m, int n) {
 
 template <class T>
 Graph<T>::~Graph() {
+    for (auto v : vertexSet) {
+        for (auto e : v->adj) {
+            delete e;
+        }
+        v->adj.clear();
+    }
+    for (auto v : vertexSet) {
+        delete v;
+    }
     deleteMatrix(distMatrix, vertexSet.size());
     deleteMatrix(pathMatrix, vertexSet.size());
 }
