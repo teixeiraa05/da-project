@@ -158,82 +158,68 @@
  *
  * @tableofcontents
  *
- * @section ra_problem Problem Statement
+ * @section rak_problem Problem Statement
  *
  * Given a valid reviewer assignment, determine whether the assignment remains
  * feasible if <b>any K reviewers simultaneously fail</b> to complete their reviews.
- * A reviewer "failing" means all their assigned submissions lose those reviews entirely.
+ * 
  *
- * @section ra_approach Approach
+ * @section rak_app1 Approach 1: Naive Combinatorial Search
  *
- * The naive approach is to enumerate all possible subsets of K reviewers,
- * remove them and rerun Max-Flow for each subset. However this has complexity
- * O(C(M,K) × MaxFlow) which grows exponentially with K.
- *
- * A more efficient approach combines Max-Flow with a <b>minimum vertex cut</b> formulation.
- *
- * @subsection ra_step1 Step 1 — Node Splitting
- *
- * Transform each reviewer node r into two nodes r_in and r_out connected
- * by an internal edge with capacity 1:
+ * The most straightforward solution passes by using full combinatorial search, where one removes every K-sized subset of reviwers from the graph and checks if the assignment is still possible.
  *
  * @code
- * Source → Submission → r_in ──(1)──► r_out → Sink
- * @endcode
+ * RiskySets = {}
+ * ExpectedTotalFlow = sum(MinReviewsPerSubmission for all submissions)
  *
- * This encodes "this reviewer can be removed" as cutting the internal edge.
- *
- * @subsection ra_step2 Step 2 — Find Minimum K-Cut
- *
- * The problem reduces to finding the <b>minimum vertex cut</b> of size K
- * in the reviewer layer. If the minimum vertex cut has size < K, then there
- * exist K reviewers whose removal breaks the assignment.
- *
- * This can be solved using K successive max-flow computations on the node-split graph:
- *
- * @code
- * for i = 1 to K:
- *     find min-cut in current graph
- *     remove the reviewer corresponding to the cut edge
- *     update graph
- *     if assignment no longer feasible:
- *         report this set of reviewers as risky
- * @endcode
- *
- * @subsection ra_step3 Step 3 — Enumerate Risky Sets
- *
- * For reporting, collect all sets of K reviewers whose removal breaks feasibility:
- *
- * @code
- * RiskySet = {}
  * for each combination C of K reviewers:
- *     build graph without reviewers in C
- *     run MaxFlow
- *     if totalFlow < expectedFlow:
- *         RiskySet.add(C)
- * report RiskySet sorted
+ * // Simulate the failure of the K reviewers
+ * for each Reviewer R in C:
+ * set capacity of edge (R → Sink) to 0
+ * * // Verify if the system survives
+ * Run Max-Flow from scratch on modified graph
+ * if totalFlow < ExpectedTotalFlow:
+ * RiskySets.add(C)
+ * * // Restore the graph for the next iteration
+ * for each Reviewer R in C:
+ * restore capacity of edge (R → Sink)
+ *
+ * report RiskySets sorted
  * @endcode
  *
- * @section ra_complexity Complexity Analysis
+ * <b>Conclusion:</b> This approach is mathematically sound and guarantees finding all risky sets. However, it scales exponentially O(C(M,K) × MaxFlow) and becomes computationally intractable for large networks and moderate values of K.
  *
- * | Approach                  | Time Complexity          | Space    |
- * |---------------------------|--------------------------|----------|
- * | Naive enumeration         | O(C(M,K) × V × E²)      | O(V+E)   |
- * | Min vertex cut (K passes) | O(K × V × E²)           | O(V+E)   |
+ * @section rak_app2 Approach 2: Node-Splitting and Min-Cut (The Theoretical Trap)
  *
- * Where:
- * - M = number of reviewers
- * - V = N + M + 2 (total vertices)
- * - E = O(N×M) (total edges)
- * - C(M,K) = M! / (K! × (M-K)!) grows exponentially
+ * To avoid exponential complexity, one might attempt to solve this using a minimum vertex cut approach
+ * by splitting each reviewer node into an `r_in` and `r_out` node connected by an internal edge. 
+ * However, standard network flow algorithms fail for this specific problem:
+ * * <b>If internal capacity = 1:</b> The algorithm perfectly counts the number of reviewers removed. However, it artificially throttles `MaxReviewsPerReviewer` to 1, violating the problem's constraints and breaking valid assignments.
+ * * <b>If internal capacity = MaxReviewsPerReviewer:</b> The algorithm respects the workload constraints, but the Min-Cut now finds the lowest <i>capacity</i> cut, not the lowest <i>number of reviewers</i>. The algorithm will aggressively cut single `Submission → Reviewer` edges (capacity = 1) instead of the actual reviewer nodes (capacity > 1).
  *
- * The min vertex cut approach is <b>polynomial in K</b> making it practical
- * for small K, while the naive approach becomes infeasible even for moderate
- * values like K=5 with 20 reviewers (C(20,5) = 15504 iterations).
+ * <b>Conclusion:</b> Standard polynomial Min-Cut algorithms cannot be used to find K failing reviewers because they optimize for lost capacity, not isolated vertex counts.
  *
- * @section ra_example Non-Trivial Example
+ * @section rak_app3 Approach 3: Optimized Combinatorial Search with Pruning
  *
- * @subsection ra_input Input
+ * To mitigate the exponential explosion of the naive combinatorial approach, we can apply <b>Branch and Bound</b> pruning strategies to bypass the expensive Edmonds-Karp computations for large branches of the search tree.
+ *
+ * 1. <b>O(1) Raw Capacity Pruning:</b> Before running Max-Flow on a combination, calculate the theoretical maximum capacity of the remaining (M - K) reviewers. If this total remaining capacity is strictly less than the total `MinReviewsPerSubmission` required, the network is mathematically guaranteed to fail. We immediately add this combination to `RiskySets` and skip the Max-Flow computation.
+ * 2. <b>Subset Dependency Pruning (Upward Propagation):</b> If a system fails when a specific subset of reviewers leaves (e.g., Reviewer 2 alone breaks the system at K=1), it will absolutely fail if that subset <i>and</i> anyone else leaves. When computing K=2, any combination containing Reviewer 2 is instantly flagged as a Risky Set without needing to run Max-Flow.
+ *
+ * <b>Conclusion:</b> While the worst-case complexity remains exponential, pruning drastically reduces the average-case execution time, making the algorithm highly practical for real-world conference constraints.
+ *
+ * @section rak_complexity Complexity Comparison
+ *
+ * | Approach                  | Time Complexity          | Finds All Sets? | Practicality |
+ * |---------------------------|--------------------------|-----------------|--------------|
+ * | Naive Combinatorial       | O(C(M,K) × V × E²)       | Yes             | Intractable  |
+ * | Min-Cut Node Splitting    | O(K × V × E²)            | No (Flawed)     | Invalid      |
+ * | Pruned Combinatorial      | O(C(M,K) × V × E²) * | Yes             | Practical    |
+ * * <i>* Worst-case complexity. Average case is heavily optimized by O(1) mathematical pruning.</i>
+ *
+ * @section rak_example Non-Trivial Example
+ *
+ * @subsection rak_input Input
  * @code
  * #Submissions
  * 1, "Paper A", Author A, a@up.pt, 1,
@@ -257,14 +243,14 @@
  * OutputFileName, "output.csv"
  * @endcode
  *
- * @subsection ra_reasoning Why This Is Non-Trivial for K=2
+ * @subsection rak_reasoning Why This Is Non-Trivial for K=2
  *
  * - 3 submissions × 2 reviews needed = 6 total reviews required
  * - 3 reviewers × 3 max reviews = 9 total capacity available
  * - Remove any 1 reviewer: 2 remaining × 3 max = 6 capacity → still feasible ✓
  * - Remove any 2 reviewers: 1 remaining × 3 max = 3 capacity < 6 needed → infeasible ✗
  *
- * @subsection ra_output Expected Output
+ * @subsection rak_output Expected Output
  * @code
  * #Risk Analysis: 2
  * 1, 2
@@ -272,8 +258,7 @@
  * 2, 3
  * @endcode
  *
- * All pairs are risky because with only 3 reviewers and MinReviewsPerSubmission=2,
- * removing any 2 reviewers breaks feasibility.
+ * All pairs are risky. Even though the initial graph has an excess capacity of 3, removing any 2 reviewers mathematically drops the maximum available network capacity to 3, which is immediately caught by our <b>O(1) Raw Capacity Prune</b> without ever needing to run the Max-Flow algorithm.
  */
 
 /**
