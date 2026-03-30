@@ -165,7 +165,7 @@ protected:
     bool         processing = false;  ///< Used by DAG cycle detection
     int          low        = -1;     ///< Used by Tarjan SCC
     int          num        = -1;     ///< Used by Tarjan SCC
-    unsigned int indegree;            ///< Used by topological sort
+    unsigned int indegree = 0;            ///< Used by topological sort
     double       dist       = 0;      ///< Used by Dijkstra, Prim
     Edge<T>*     path       = nullptr;///< Used by flow algorithms for path reconstruction
     int          queueIndex = 0;      ///< Required by MutablePriorityQueue and UFDS
@@ -272,7 +272,7 @@ protected:
     bool       selected = false;  ///< Auxiliary selection flag
     Vertex<T>* orig;              ///< Origin vertex
     Edge<T>*   reverse  = nullptr;///< Reverse edge for residual graph (nullptr if not set)
-    double     flow;              ///< Current flow through this edge
+    double     flow = 0;          ///< Current flow through this edge
 };
 
 /********************** Graph  ****************************/
