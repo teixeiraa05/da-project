@@ -158,75 +158,168 @@
  *
  * @tableofcontents
  *
- * @section rak_problem Problem Statement
+ * @section ra_problem Problem Statement
  *
- * Given a valid reviewer assignment, determine whether the assignment remains
- * feasible if <b>any K reviewers simultaneously fail</b> to complete their reviews.
- * 
+ * Let `M` be the set of reviewers and `K > 1`. We must identify every subset
+ * `C ⊆ M` with `|C| = K` such that, if all reviewers in `C` fail, the assignment
+ * becomes infeasible.
  *
- * @section rak_app1 Approach 1: Naive Combinatorial Search
+ * Infeasible means the maximum flow in the reduced network is strictly smaller
+ * than:
+ * @code
+ * ExpectedFlow = N * MinReviewsPerSubmission
+ * @endcode
+ * where `N` is the number of submissions.
  *
- * The most straightforward solution passes by using full combinatorial search, where one removes every K-sized subset of reviwers from the graph and checks if the assignment is still possible.
+ * @section ra_why_enumeration Why Enumeration Is Necessary
+ *
+ * For `K=1`, iterating reviewers is enough. For `K>1`, the output requires the
+ * explicit risky combinations, not only a yes/no answer:
  *
  * @code
- * RiskySets = {}
- * ExpectedTotalFlow = sum(MinReviewsPerSubmission for all submissions)
- *
- * for each combination C of K reviewers:
- * // Simulate the failure of the K reviewers
- * for each Reviewer R in C:
- * set capacity of edge (R → Sink) to 0
- * * // Verify if the system survives
- * Run Max-Flow from scratch on modified graph
- * if totalFlow < ExpectedTotalFlow:
- * RiskySets.add(C)
- * * // Restore the graph for the next iteration
- * for each Reviewer R in C:
- * restore capacity of edge (R → Sink)
- *
- * report RiskySets sorted
+ * #Risk Analysis: 2
+ * 1, 2
+ * 1, 3
+ * 2, 3
  * @endcode
  *
- * <b>Conclusion:</b> This approach is mathematically sound and guarantees finding all risky sets. However, it scales exponentially O(C(M,K) × MaxFlow) and becomes computationally intractable for large networks and moderate values of K.
+ * Therefore, we must evaluate combinations of size `K`. A single min-cut value
+ * can indicate vulnerability, but it does not enumerate all risky subsets.
  *
- * @section rak_app2 Approach 2: Node-Splitting and Min-Cut (The Theoretical Trap)
+ * @section ra_approach Approach — Combination Enumeration with Max-Flow
  *
- * To avoid exponential complexity, one might attempt to solve this using a minimum vertex cut approach
- * by splitting each reviewer node into an `r_in` and `r_out` node connected by an internal edge. 
- * However, standard network flow algorithms fail for this specific problem:
- * * <b>If internal capacity = 1:</b> The algorithm perfectly counts the number of reviewers removed. However, it artificially throttles `MaxReviewsPerReviewer` to 1, violating the problem's constraints and breaking valid assignments.
- * * <b>If internal capacity = MaxReviewsPerReviewer:</b> The algorithm respects the workload constraints, but the Min-Cut now finds the lowest <i>capacity</i> cut, not the lowest <i>number of reviewers</i>. The algorithm will aggressively cut single `Submission → Reviewer` edges (capacity = 1) instead of the actual reviewer nodes (capacity > 1).
+ * Reuse the max-flow model from T2.1 and evaluate each combination of failed
+ * reviewers.
  *
- * <b>Conclusion:</b> Standard polynomial Min-Cut algorithms cannot be used to find K failing reviewers because they optimize for lost capacity, not isolated vertex counts.
+ * @code
+ * ExpectedFlow = submissions.size() * MinReviewsPerSubmission
+ * RiskySets = {}
  *
- * @section rak_app3 Approach 3: Optimized Combinatorial Search with Pruning
+ * for each combination C of K reviewers:
+ *     tempGraph = rebuild base graph (or deep copy)
  *
- * To mitigate the exponential explosion of the naive combinatorial approach, we can apply <b>Branch and Bound</b> pruning strategies to bypass the expensive Edmonds-Karp computations for large branches of the search tree.
+ *     // Simulate reviewer failure for all r in C
+ *     // Equivalent options:
+ *     // (a) remove reviewer node and incident edges, or
+ *     // (b) set capacities of edges (* -> r) and (r -> sink) to 0
  *
- * 1. <b>O(1) Raw Capacity Pruning:</b> Before running Max-Flow on a combination, calculate the theoretical maximum capacity of the remaining (M - K) reviewers. If this total remaining capacity is strictly less than the total `MinReviewsPerSubmission` required, the network is mathematically guaranteed to fail. We immediately add this combination to `RiskySets` and skip the Max-Flow computation.
- * 2. <b>Subset Dependency Pruning (Upward Propagation):</b> If a system fails when a specific subset of reviewers leaves (e.g., Reviewer 2 alone breaks the system at K=1), it will absolutely fail if that subset <i>and</i> anyone else leaves. When computing K=2, any combination containing Reviewer 2 is instantly flagged as a Risky Set without needing to run Max-Flow.
+ *     run max-flow(tempGraph)
+ *     totalFlow = flow leaving source
  *
- * <b>Conclusion:</b> While the worst-case complexity remains exponential, pruning drastically reduces the average-case execution time, making the algorithm highly practical for real-world conference constraints.
+ *     if totalFlow < ExpectedFlow:
+ *         RiskySets.add(C)
  *
- * @section rak_complexity Complexity Comparison
+ * sort RiskySets lexicographically
+ * report RiskySets
+ * @endcode
  *
- * | Approach                  | Time Complexity          | Finds All Sets? | Practicality |
- * |---------------------------|--------------------------|-----------------|--------------|
- * | Naive Combinatorial       | O(C(M,K) × V × E²)       | Yes             | Intractable  |
- * | Min-Cut Node Splitting    | O(K × V × E²)            | No (Flawed)     | Invalid      |
- * | Pruned Combinatorial      | O(C(M,K) × V × E²) * | Yes             | Practical    |
- * * <i>* Worst-case complexity. Average case is heavily optimized by O(1) mathematical pruning.</i>
+ * @subsection ra_why_works Why It Is Correct
  *
- * @section rak_example Non-Trivial Example
+ * In this formulation, feasibility is equivalent to achieving `ExpectedFlow`.
+ * For any fixed failed set `C`, the reduced graph encodes exactly the remaining
+ * assignment possibilities. Running max-flow on that graph returns the best
+ * feasible assignment under that failure scenario.
  *
- * @subsection rak_input Input
+ * Hence:
+ * - if `maxFlow(reducedGraph(C)) == ExpectedFlow`, the system survives `C`;
+ * - if `maxFlow(reducedGraph(C)) < ExpectedFlow`, `C` is risky.
+ *
+ * Enumerating all combinations of size `K` guarantees all risky sets are found.
+ *
+ * @section ra_complexity Complexity Analysis
+ *
+ * Let:
+ * - `M` = number of reviewers
+ * - `N` = number of submissions
+ * - `V = N + M + 2`
+ * - `E = O(N*M)`
+ * - `T_flow = O(V*E^2)` for Edmonds-Karp
+ *
+ * Number of scenarios tested:
+ * @code
+ * C(M,K) = M! / (K!(M-K)!)
+ * @endcode
+ *
+ * Total complexity:
+ * @code
+ * O(C(M,K) * T_flow) = O(C(M,K) * V * E^2)
+ * @endcode
+ *
+ * Space per run is `O(V + E)` (plus temporary storage for combinations/output).
+ *
+ * `C(M,K)` is combinatorial and can be very large when `M` grows, so this
+ * approach is exact but expensive for large instances.
+ *
+ * @section ra_preprocessing Min-Cut with Max-Flow
+ *
+ * Before enumerating all `C(M,K)` reviewer subsets, we can run a global
+ * resilience check using a cut-based view of the same flow network.
+ *
+ * Idea:
+ * - Build an auxiliary graph where each reviewer is node-split into
+ *   `r_in -> r_out` with capacity `1` (or reviewer weight, if weighted).
+ * - Keep source/submission/reviewer/sink connectivity equivalent to the
+ *   assignment network.
+ * - Compute a min `s-t` cut via max-flow.
+ *
+ * Interpretation:
+ * - The cut value `lambda` is the minimum number of reviewer failures needed
+ *   to make the assignment infeasible in this relaxation.
+ * - If `K < lambda`, then no risky subset of size `K` can exist.
+ * - If `K >= lambda`, risky subsets may exist, but the cut alone does not list
+ *   all of them.
+ *
+ * Why this is only heuristic for T2.3 output:
+ * - T2.3 requires explicit enumeration of risky combinations.
+ * - A min-cut gives a bound/certificate about existence, not the complete set
+ *   of failing reviewer combinations.
+ * - Therefore, min-cut is best used to skip impossible cases or to guide search
+ *   order, not as a replacement for enumeration.
+ *
+ * Practical pipeline:
+ * @code
+ * 1) Compute lambda with one min-cut/max-flow pass.
+ * 2) If K < lambda: return empty risky set immediately.
+ * 3) Else: run combination enumeration, optionally prioritizing reviewers
+ *    that appear frequently in near-min cuts.
+ * @endcode
+ *
+ * @section ra_pruning Pruning During Enumeration (Exact Output Preserved)
+ *
+ * The following pruning rules reduce runtime without changing correctness.
+ * They never discard a truly risky subset.
+ *
+ * 1. Capacity upper-bound pruning (safe early reject)
+ * @code
+ * remainingCapacity = sum maxReviewsPerReviewer over reviewers not in C
+ * if remainingCapacity < ExpectedFlow:
+ *     mark C risky without running max-flow
+ * @endcode
+ * This is a necessary condition for feasibility, so it is exact as a reject test.
+ *
+ * 2. Domain coverage pruning (safe early reject in constrained domain modes)
+ * @code
+ * for each domain d:
+ *     maxPossibleReviews(d, C) < requiredReviews(d)  =>  C is risky
+ * @endcode
+ * If a domain cannot be covered even in the best case, max-flow is unnecessary.
+ *
+ *
+ * With these rules, the worst-case remains combinatorial, but typical instances
+ * become much faster while still producing the exact full risky-set output.
+ *
+ * @section ra_example Non-Trivial Example (K = 2)
+ *
+ * @subsection ra_input Input
  * @code
  * #Submissions
+ * #Id, Title, Authors, E-mail, Primary, Secondary
  * 1, "Paper A", Author A, a@up.pt, 1,
  * 2, "Paper B", Author B, b@up.pt, 1,
  * 3, "Paper C", Author C, c@up.pt, 1,
  * #
  * #Reviewers
+ * #Id, Name, E-mail, Primary, Secondary
  * 1, Reviewer One,   r1@up.pt, 1,
  * 2, Reviewer Two,   r2@up.pt, 1,
  * 3, Reviewer Three, r3@up.pt, 1,
@@ -243,22 +336,20 @@
  * OutputFileName, "output.csv"
  * @endcode
  *
- * @subsection rak_reasoning Why This Is Non-Trivial for K=2
+ * Expected flow is `3 * 2 = 6`.
  *
- * - 3 submissions × 2 reviews needed = 6 total reviews required
- * - 3 reviewers × 3 max reviews = 9 total capacity available
- * - Remove any 1 reviewer: 2 remaining × 3 max = 6 capacity → still feasible ✓
- * - Remove any 2 reviewers: 1 remaining × 3 max = 3 capacity < 6 needed → infeasible ✗
+ * - Remove any one reviewer: remaining capacity is `2 * 3 = 6` (still feasible).
+ * - Remove any two reviewers: remaining capacity is `1 * 3 = 3` (infeasible).
  *
- * @subsection rak_output Expected Output
+ * So all size-2 combinations are risky.
+ *
+ * @subsection ra_output Expected Output
  * @code
  * #Risk Analysis: 2
  * 1, 2
  * 1, 3
  * 2, 3
  * @endcode
- *
- * All pairs are risky. Even though the initial graph has an excess capacity of 3, removing any 2 reviewers mathematically drops the maximum available network capacity to 3, which is immediately caught by our <b>O(1) Raw Capacity Prune</b> without ever needing to run the Max-Flow algorithm.
  */
 
 /**
