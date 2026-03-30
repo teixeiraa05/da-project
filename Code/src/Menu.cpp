@@ -1,6 +1,11 @@
 #include "../include/Menu.h"
 #include "../include/Parser.h"
 #include "../include/AssignmentSolver.h"
+#include <filesystem>
+#include <fstream>
+#include <cstdlib>
+
+Menu::Menu(const std::string& execPath) : execPath(execPath) {}
 
 void Menu::run() {
     int choice;
@@ -59,17 +64,17 @@ void Menu::run() {
 void Menu::displayMenu() {
     std::cout << "\nScientific Conference Organization Tool \n" << std::endl;
     std::cout << "============== MENU ============== " << std::endl;
-    std::cout << " 01. Load data from file" << std::endl;
-    std::cout << " 02. Show Submissions" << std::endl;
-    std::cout << " 03. Show Reviewers" << std::endl;
-    std::cout << " 04. Show Parameters" << std::endl;
-    std::cout << " 05. Show Control Settings" << std::endl;
-    std::cout << " 06. Run Assignment (Edmonds-Karp)" << std::endl;
-    std::cout << " 07. Run Assignment (Ford-Fulkerson)" << std::endl;
-    std::cout << " 08. Run Risk Analysis" << std::endl;
-    std::cout << " 09. Show last assignments" << std::endl;
+    std::cout << " 1. Load data from file" << std::endl;
+    std::cout << " 2. Show Submissions" << std::endl;
+    std::cout << " 3. Show Reviewers" << std::endl;
+    std::cout << " 4. Show Parameters" << std::endl;
+    std::cout << " 5. Show Control Settings" << std::endl;
+    std::cout << " 6. Run Assignment (Edmonds-Karp)" << std::endl;
+    std::cout << " 7. Run Assignment (Ford-Fulkerson)" << std::endl;
+    std::cout << " 8. Run Risk Analysis" << std::endl;
+    std::cout << " 9. Show last assignments" << std::endl;
     std::cout << " 10. Run Tests" << std::endl;
-    std::cout << " 00. Exit" << std::endl;
+    std::cout << " 0. Exit" << std::endl;
     std::cout << "================================== " << std::endl;
 }
 
@@ -202,13 +207,123 @@ void Menu::handleShowLastAssignments() {
 }
 
 void Menu::handleRunTests() {
-    std::cout << "\nRunning tests...\n";
-    int ret = system("bash run_tests.sh");
-    if (ret != 0) {
-        std::cout << "Tests finished with errors (exit code " << ret << ").\n";
-    } else {
-        std::cout << "Tests finished successfully.\n";
+    namespace fs = std::filesystem;
+
+    std::string inputDir, outputDir;
+
+    std::cout << "\n========== Run Tests ==========\n";
+    std::cout << "Enter path to input files directory: ";
+    std::getline(std::cin, inputDir);
+    std::cout << "Enter path to expected output files directory: ";
+    std::getline(std::cin, outputDir);
+
+    if (inputDir.empty() || outputDir.empty()) {
+        std::cout << "Error: Input and output directory paths cannot be empty.\n";
+        return;
     }
+
+    if (!fs::exists(inputDir) || !fs::is_directory(inputDir)) {
+        std::cout << "Error: Input directory does not exist: " << inputDir << "\n";
+        return;
+    }
+    if (!fs::exists(outputDir) || !fs::is_directory(outputDir)) {
+        std::cout << "Error: Output directory does not exist: " << outputDir << "\n";
+        return;
+    }
+
+    if (!fs::exists(execPath)) {
+        std::cout << "Executable not found. Compiling...\n";
+        int ret = std::system("g++ -std=c++17 -Wall -I Code/include Code/src/*.cpp -o run_tests");
+        if (ret != 0) {
+            std::cout << "Compilation failed!\n";
+            return;
+        }
+        std::cout << "Compilation successful!\n";
+    }
+
+    int passed = 0, failed = 0, skipped = 0;
+
+    for (const auto& entry : fs::directory_iterator(inputDir)) {
+        if (!entry.is_regular_file()) continue;
+        if (entry.path().extension() != ".csv") continue;
+
+        std::string inputPath = entry.path().string();
+        std::string inputName = entry.path().filename().string();
+
+        Parser parser;
+        ConferenceData data = parser.parseFile(inputPath);
+        if (data.submissions.empty() && data.reviewers.empty()) {
+            std::cout << "  SKIPPED " << inputName << " (parse error)\n";
+            skipped++;
+            continue;
+        }
+
+        std::string outputFileName = data.control.outputFileName;
+        std::cout << "\n  Testing " << inputName << " -> " << outputFileName << "\n";
+
+        std::string cmd = execPath + " -b \"" + inputPath + "\"";
+        std::system(cmd.c_str());
+
+        std::string generatedPath = outputFileName;
+        std::string expectedPath = (fs::path(outputDir) / ("output_" + inputName)).string();
+
+        if (!fs::exists(generatedPath)) {
+            std::cout << "  FAILED  " << inputName << " (no output file: " << outputFileName << ")\n";
+            failed++;
+            continue;
+        }
+        if (!fs::exists(expectedPath)) {
+            std::cout << "  SKIPPED " << inputName << " (no expected file: output_" << inputName << ")\n";
+            skipped++;
+            continue;
+        }
+
+        std::ifstream genFile(generatedPath), expFile(expectedPath);
+        std::string genLine, expLine;
+        int genLineNum = 0, expLineNum = 0;
+        bool match = true;
+        std::string firstDiff;
+
+        while (true) {
+            bool hasGen = (bool)std::getline(genFile, genLine);
+            bool hasExp = (bool)std::getline(expFile, expLine);
+            genLineNum += hasGen;
+            expLineNum += hasExp;
+
+            if (!hasGen && !hasExp) break;
+
+            if (hasGen != hasExp) {
+                if (firstDiff.empty())
+                    firstDiff = "  Line count differs (generated: " + std::to_string(genLineNum) +
+                                ", expected: " + std::to_string(expLineNum) + ")";
+                match = false;
+                break;
+            }
+            if (genLine != expLine) {
+                if (firstDiff.empty())
+                    firstDiff = "  Line " + std::to_string(genLineNum) + " differs:\n"
+                                "    got:      \"" + genLine + "\"\n"
+                                "    expected: \"" + expLine + "\"";
+                match = false;
+            }
+        }
+
+        if (match) {
+            std::cout << "  PASSED  " << inputName << "\n";
+            passed++;
+        } else {
+            std::cout << "  FAILED  " << inputName << "\n";
+            std::cout << firstDiff << "\n";
+            failed++;
+        }
+    }
+
+    std::cout << "\n========================================\n";
+    std::cout << "  Passed:  " << passed << "\n";
+    std::cout << "  Failed:  " << failed << "\n";
+    std::cout << "  Skipped: " << skipped << "\n";
+    std::cout << "  Total:   " << (passed + failed + skipped) << "\n";
+    std::cout << "========================================\n";
 }
 
 void Menu::handleRiskAnalysis() {
