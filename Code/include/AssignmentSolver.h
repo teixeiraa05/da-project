@@ -87,7 +87,8 @@ public:
      * 31, 3, 2
      * @endcode
      *
-     * All listings are sorted as required by the specification.
+     * The submission-order block is written in natural loop order.
+     * The reviewer-order block is explicitly sorted by reviewer ID, then submission ID.
      *
      * @param filename Path to the output CSV file.
     * @complexity Time: O(E + A log A), where A = number of assignments.
@@ -99,12 +100,12 @@ public:
     
     void printAssignments() const;
     /**
-     * @brief Performs risk analysis by simulating reviewer removal.
+     * @brief Performs risk analysis by simulating single-reviewer removal.
      *
-    * For RiskAnalysis = 1: removes each reviewer one at a time, rebuilds
-     * the graph, reruns the flow algorithm and checks if the assignment is
-    * still feasible. Reports which reviewers are "risky" - those whose
-     * removal makes the full assignment impossible.
+     * Removes each reviewer one at a time, zeroes their edges, reruns
+     * Edmonds-Karp and checks if the assignment is still feasible.
+     * Reports which reviewers are "risky" — those whose removal makes
+     * the full assignment impossible.
      *
      * Results are written to both the main output file and the risk file
      * (if provided), using the same formatted output.
@@ -118,8 +119,8 @@ public:
      * @param riskFile Path to the risk analysis output file (optional).
      *                 If empty, results are only appended to the main output file.
      *
-    * @complexity Time: O(M * V * E^2) in the current implementation,
-    *                   where M = number of reviewers.
+     * @complexity Time: O(M * V * E^2) in the current implementation,
+     *                   where M = number of reviewers.
      * @complexity Space: O(N + M) per iteration for the temporary graph.
      */
     std::vector<int> riskAnalysis(const std::string& riskFile = "") const;
