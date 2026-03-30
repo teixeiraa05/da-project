@@ -18,7 +18,8 @@
  * @param residual Residual capacity of the edge.
  */
 template <class T>
-void testAndVisit(std::queue<Vertex<T>*>& q, Edge<T>* e, Vertex<T>* w, double residual);
+void testAndVisit(std::queue<Vertex<T> *> &q, Edge<T> *e, Vertex<T> *w,
+		  double residual);
 
 /**
  * @brief Finds an augmenting path from s to t using BFS.
@@ -33,7 +34,7 @@ void testAndVisit(std::queue<Vertex<T>*>& q, Edge<T>* e, Vertex<T>* w, double re
  * @return true if an augmenting path exists, false otherwise.
  */
 template <class T>
-bool findAugmentingPath(Graph<T>* g, Vertex<T>* s, Vertex<T>* t);
+bool findAugmentingPath(Graph<T> *g, Vertex<T> *s, Vertex<T> *t);
 
 /**
  * @brief Finds the minimum residual capacity along the augmenting path.
@@ -46,8 +47,7 @@ bool findAugmentingPath(Graph<T>* g, Vertex<T>* s, Vertex<T>* t);
  * @param t Sink vertex.
  * @return Minimum residual capacity (bottleneck) along the path.
  */
-template <class T>
-double findMinResidualAlongPath(Vertex<T>* s, Vertex<T>* t);
+template <class T> double findMinResidualAlongPath(Vertex<T> *s, Vertex<T> *t);
 
 /**
  * @brief Augments flow along the augmenting path by f units.
@@ -61,7 +61,7 @@ double findMinResidualAlongPath(Vertex<T>* s, Vertex<T>* t);
  * @param f Flow value to augment (bottleneck).
  */
 template <class T>
-void augmentFlowAlongPath(Vertex<T>* s, Vertex<T>* t, double f);
+void augmentFlowAlongPath(Vertex<T> *s, Vertex<T> *t, double f);
 
 /**
  * @brief Runs the Edmonds-Karp Max-Flow algorithm on a graph.
@@ -75,15 +75,14 @@ void augmentFlowAlongPath(Vertex<T>* s, Vertex<T>* t, double f);
  * @param source Info value of the source vertex.
  * @param sink   Info value of the sink vertex.
  *
- * @note The flow values are stored directly on the graph edges after completion.
- *       Use edge->getFlow() to retrieve individual assignment results.
+ * @note The flow values are stored directly on the graph edges after
+ * completion. Use edge->getFlow() to retrieve individual assignment results.
  *
- * @complexity Time: O(V * E^2), where V = number of vertices and E = number of edges.
- *                    This is the key advantage over Ford-Fulkerson — the BFS
- *                    guarantees shortest augmenting paths, bounding iterations to O(V*E).
+ * @complexity Time: O(V * E^2), where V = number of vertices and E = number of
+ * edges. This is the key advantage over Ford-Fulkerson — the BFS guarantees
+ * shortest augmenting paths, bounding iterations to O(V*E).
  */
-template <class T>
-void edmondsKarp(Graph<T>* g, int source, int sink);
+template <class T> void edmondsKarp(Graph<T> *g, int source, int sink);
 
 /**
  * @brief Visits a neighbor during BFS if it is reachable in the residual graph.
@@ -92,12 +91,13 @@ void edmondsKarp(Graph<T>* g, int source, int sink);
  * and enqueues it for further BFS expansion.
  */
 template <class T>
-void testAndVisit(std::queue<Vertex<T>*>& q, Edge<T>* e, Vertex<T>* w, double residual) {
-	if (!w->isVisited() && residual > 0) {
-		w->setVisited(true);
-		w->setPath(e);
-		q.push(w);
-	}
+void testAndVisit(std::queue<Vertex<T> *> &q, Edge<T> *e, Vertex<T> *w,
+		  double residual) {
+    if (!w->isVisited() && residual > 0) {
+	w->setVisited(true);
+	w->setPath(e);
+	q.push(w);
+    }
 }
 
 /**
@@ -105,55 +105,55 @@ void testAndVisit(std::queue<Vertex<T>*>& q, Edge<T>* e, Vertex<T>* w, double re
  * @return true if sink t is reachable from source s, false otherwise.
  */
 template <class T>
-bool findAugmentingPath(Graph<T>* g, Vertex<T>* s, Vertex<T>* t) {
-	for (auto v : g->getVertexSet()) {
-		v->setVisited(false);
-		v->setPath(nullptr);
+bool findAugmentingPath(Graph<T> *g, Vertex<T> *s, Vertex<T> *t) {
+    for (auto v : g->getVertexSet()) {
+	v->setVisited(false);
+	v->setPath(nullptr);
+    }
+
+    std::queue<Vertex<T> *> q;
+    s->setVisited(true);
+    q.push(s);
+
+    while (!q.empty() && !t->isVisited()) {
+	auto v = q.front();
+	q.pop();
+
+	// Traverse residual forward edges.
+	for (auto e : v->getAdj()) {
+	    testAndVisit(q, e, e->getDest(), e->getWeight() - e->getFlow());
 	}
 
-	std::queue<Vertex<T>*> q;
-	s->setVisited(true);
-	q.push(s);
-
-	while (!q.empty() && !t->isVisited()) {
-		auto v = q.front();
-		q.pop();
-
-		// Traverse residual forward edges.
-		for (auto e : v->getAdj()) {
-			testAndVisit(q, e, e->getDest(), e->getWeight() - e->getFlow());
-		}
-
-		// Traverse residual backward edges.
-		for (auto e : v->getIncoming()) {
-			testAndVisit(q, e, e->getOrig(), e->getFlow());
-		}
+	// Traverse residual backward edges.
+	for (auto e : v->getIncoming()) {
+	    testAndVisit(q, e, e->getOrig(), e->getFlow());
 	}
+    }
 
-	return t->isVisited();
+    return t->isVisited();
 }
 
 /**
- * @brief Computes the bottleneck (minimum residual capacity) on the current path.
+ * @brief Computes the bottleneck (minimum residual capacity) on the current
+ * path.
  *
  * Walks backwards from sink to source using `path` pointers set by BFS.
  */
-template <class T>
-double findMinResidualAlongPath(Vertex<T>* s, Vertex<T>* t) {
-	double f = INF;
+template <class T> double findMinResidualAlongPath(Vertex<T> *s, Vertex<T> *t) {
+    double f = INF;
 
-	for (auto v = t; v != s;) {
-		auto e = v->getPath();
-		if (e->getDest() == v) {
-			f = std::min(f, e->getWeight() - e->getFlow());
-			v = e->getOrig();
-		} else {
-			f = std::min(f, e->getFlow());
-			v = e->getDest();
-		}
+    for (auto v = t; v != s;) {
+	auto e = v->getPath();
+	if (e->getDest() == v) {
+	    f = std::min(f, e->getWeight() - e->getFlow());
+	    v = e->getOrig();
+	} else {
+	    f = std::min(f, e->getFlow());
+	    v = e->getDest();
 	}
+    }
 
-	return f;
+    return f;
 }
 
 /**
@@ -163,18 +163,18 @@ double findMinResidualAlongPath(Vertex<T>* s, Vertex<T>* t) {
  * to the direction stored in each vertex path edge.
  */
 template <class T>
-void augmentFlowAlongPath(Vertex<T>* s, Vertex<T>* t, double f) {
-	for (auto v = t; v != s;) {
-		auto e = v->getPath();
+void augmentFlowAlongPath(Vertex<T> *s, Vertex<T> *t, double f) {
+    for (auto v = t; v != s;) {
+	auto e = v->getPath();
 
-		if (e->getDest() == v) {
-			e->setFlow(e->getFlow() + f);
-			v = e->getOrig();
-		} else {
-			e->setFlow(e->getFlow() - f);
-			v = e->getDest();
-		}
+	if (e->getDest() == v) {
+	    e->setFlow(e->getFlow() + f);
+	    v = e->getOrig();
+	} else {
+	    e->setFlow(e->getFlow() - f);
+	    v = e->getDest();
 	}
+    }
 }
 
 /**
@@ -185,23 +185,22 @@ void augmentFlowAlongPath(Vertex<T>* s, Vertex<T>* t, double f) {
  * 2) computes the bottleneck,
  * 3) augments flow along the path.
  */
-template <class T>
-void edmondsKarp(Graph<T>* g, int source, int sink) {
-	auto s = g->findVertex(source);
-	auto t = g->findVertex(sink);
+template <class T> void edmondsKarp(Graph<T> *g, int source, int sink) {
+    auto s = g->findVertex(source);
+    auto t = g->findVertex(sink);
 
-	if (s == nullptr || t == nullptr) {
-		throw std::logic_error("Source or sink vertex not found in graph");
-	}
+    if (s == nullptr || t == nullptr) {
+	throw std::logic_error("Source or sink vertex not found in graph");
+    }
 
-	for (auto v : g->getVertexSet()) {
-		for (auto e : v->getAdj()) {
-			e->setFlow(0);
-		}
+    for (auto v : g->getVertexSet()) {
+	for (auto e : v->getAdj()) {
+	    e->setFlow(0);
 	}
+    }
 
-	while (findAugmentingPath(g, s, t)) {
-		double f = findMinResidualAlongPath(s, t);
-		augmentFlowAlongPath(s, t, f);
-	}
+    while (findAugmentingPath(g, s, t)) {
+	double f = findMinResidualAlongPath(s, t);
+	augmentFlowAlongPath(s, t, f);
+    }
 }

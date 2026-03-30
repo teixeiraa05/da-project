@@ -9,7 +9,8 @@
 
 /**
  * @class ConferenceGraph
- * @brief Constructs a directed flow network modelling the reviewer assignment problem.
+ * @brief Constructs a directed flow network modelling the reviewer assignment
+ * problem.
  *
  * The flow network has the following structure:
  * @code
@@ -24,19 +25,21 @@
  *
  * Edge capacities:
  * - Source → Submission:   capacity = MinReviewsPerSubmission
- * - Submission → Reviewer: capacity = 1 (each reviewer reviews each submission at most once)
+ * - Submission → Reviewer: capacity = 1 (each reviewer reviews each submission
+ * at most once)
  * - Reviewer → Sink:       capacity = MaxReviewsPerReviewer
  *
  * A Submission→Reviewer edge is only created if their domains match
  * according to the assignment mode (see domainsMatch()).
  */
 class ConferenceGraph {
-public:
+  public:
     /**
      * @brief Constructs a ConferenceGraph from the given conference data.
-     * @param data Parsed conference data including submissions, reviewers and parameters.
+     * @param data Parsed conference data including submissions, reviewers and
+     * parameters.
      */
-    ConferenceGraph(const ConferenceData& data);
+    ConferenceGraph(const ConferenceData &data);
 
     /**
      * @brief Builds and returns the complete flow network graph.
@@ -47,12 +50,12 @@ public:
      *
      * @return A directed Graph<int> representing the flow network.
      *
-    * @complexity Time: O(N*M), where N = submissions and M = reviewers.
-    *                   This comes from checking all submission-reviewer pairs.
+     * @complexity Time: O(N*M), where N = submissions and M = reviewers.
+     *                   This comes from checking all submission-reviewer pairs.
      */
     Graph<int> buildGraph() const;
 
-private:
+  private:
     ConferenceData data; ///< Local copy of the parsed conference data
 
     /**

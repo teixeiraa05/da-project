@@ -11,7 +11,8 @@
 
 /**
  * @class Menu
- * @brief Provides an interactive command-line interface for the assignment tool.
+ * @brief Provides an interactive command-line interface for the assignment
+ * tool.
  *
  * The menu manages the full lifecycle of the tool in interactive mode:
  * loading data, displaying it, running the assignment algorithm and
@@ -38,12 +39,12 @@
  * -# Exit
  */
 class Menu {
-public:
+  public:
     /**
      * @brief Constructs the Menu with the path to the current executable.
      * @param execPath Path to the executable (typically argv[0]).
      */
-    Menu(const std::string& execPath = "");
+    Menu(const std::string &execPath = "");
 
     /**
      * @brief Starts the interactive menu loop.
@@ -57,13 +58,16 @@ public:
      */
     void run();
 
-    private:
-        Parser         parser;                    ///< Parser instance used to load and validate input files
-        bool           dataLoaded         = false; ///< True after a CSV file has been successfully parsed
-        bool           assignmentGenerated = false; ///< True after an assignment has been successfully computed
-        ConferenceData data;                       ///< Holds the parsed conference data (submissions, reviewers, parameters)
-        std::unique_ptr<AssignmentSolver> solver;
-        std::string execPath;                      ///< Path to the current executable (argv[0])
+  private:
+    Parser parser; ///< Parser instance used to load and validate input files
+    bool dataLoaded =
+	false; ///< True after a CSV file has been successfully parsed
+    bool assignmentGenerated =
+	false; ///< True after an assignment has been successfully computed
+    ConferenceData data; ///< Holds the parsed conference data (submissions,
+			 ///< reviewers, parameters)
+    std::unique_ptr<AssignmentSolver> solver;
+    std::string execPath; ///< Path to the current executable (argv[0])
 
     /**
      * @brief Renders the main menu to stdout.
@@ -74,10 +78,12 @@ public:
     /**
      * @brief Prompts the user for a filename and loads the CSV input file.
      *
-     * On success, sets dataLoaded = true and resets assignmentGenerated = false.
-     * On failure, prints an error message and leaves dataLoaded unchanged.
+     * On success, sets dataLoaded = true and resets assignmentGenerated =
+     * false. On failure, prints an error message and leaves dataLoaded
+     * unchanged.
      *
-     * @complexity Time:  O(N + M) for parsing, where N = submissions, M = reviewers.
+     * @complexity Time:  O(N + M) for parsing, where N = submissions, M =
+     * reviewers.
      * @complexity Space: O(N + M) for storing parsed data.
      */
     void handleLoadFile();
@@ -133,17 +139,20 @@ public:
      * Sets assignmentGenerated = true on success.
      *
      * @pre dataLoaded == true
-     * @complexity Time:  O(E * maxFlow) where maxFlow ≤ N * MinReviewsPerSubmission.
+     * @complexity Time:  O(E * maxFlow) where maxFlow ≤ N *
+     * MinReviewsPerSubmission.
      * @complexity Space: O(V) for the DFS recursion stack.
      */
     void handleRunAssignmentFordFulkerson();
 
     /**
-     * @brief Runs the risk analysis based on the RiskAnalysis control parameter.
+     * @brief Runs the risk analysis based on the RiskAnalysis control
+     * parameter.
      *
      * For RiskAnalysis = 1: identifies reviewers whose removal makes the
      * assignment infeasible. If no assignment has been generated yet,
-     * automatically runs Edmonds-Karp first. Results are appended to the output file.
+     * automatically runs Edmonds-Karp first. Results are appended to the output
+     * file.
      *
      * @pre dataLoaded == true
      * @complexity Time:  O(M * (N*M + V*E²)) where M = reviewers.
@@ -172,7 +181,8 @@ public:
      * then compares the generated output against the expected output file
      * (same filename with "output_" prefix) in the output directory.
      *
-     * @complexity Time:  O(F * (P + D)) where F = files, P = parse+solve, D = diff.
+     * @complexity Time:  O(F * (P + D)) where F = files, P = parse+solve, D =
+     * diff.
      * @complexity Space: O(L) where L = longest file line.
      */
     void handleRunTests();
