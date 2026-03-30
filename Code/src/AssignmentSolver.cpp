@@ -99,7 +99,8 @@ void AssignmentSolver::exportAssignments(const std::string& filename) const {
                 actualReviews++;
                 
                 int revNodeId = edge->getDest()->getInfo();
-                int revIndex = getReviewerRealId(revNodeId); 
+                int revIndex = getReviewerRealId(revNodeId);
+                if (revIndex < 0 || revIndex >= static_cast<int>(data.reviewers.size())) continue;
                 const Reviewer& actualRev = data.reviewers[revIndex];
 
                 int matchDomainId = domainsMatch(actualSub, actualRev, data.control.generateAssignments);
@@ -278,14 +279,21 @@ void AssignmentSolver::generateGraphviz(const std::string& filename) const {
         else if (id <= static_cast<int>(data.submissions.size())) {
             // It's a Submission! Look up its real ID.
             int subIdx = getSubmissionRealId(id);
-            label = "Sub " + std::to_string(data.submissions[subIdx].submissionId);
+            if (subIdx >= 0 && subIdx < static_cast<int>(data.submissions.size())) {
+                label = "Sub " + std::to_string(data.submissions[subIdx].submissionId);
+            } else {
+                label = "Sub ?";
+            }
             fillcolor = "lightyellow";
         } 
         else {
             // It's a Reviewer! Look up their real ID.
             int revIdx = getReviewerRealId(id);
-            // Using \\n creates a line break inside the Graphviz node
-            label = "Rev " + std::to_string(data.reviewers[revIdx].reviewerId);
+            if (revIdx >= 0 && revIdx < static_cast<int>(data.reviewers.size())) {
+                label = "Rev " + std::to_string(data.reviewers[revIdx].reviewerId);
+            } else {
+                label = "Rev ?";
+            }
             fillcolor = "lightblue";
         }
 
@@ -366,6 +374,7 @@ void AssignmentSolver::printAssignments() const {
             if (edge->getFlow() == 1.0) {
                 int revNodeId = edge->getDest()->getInfo();
                 int revIndex = getReviewerRealId(revNodeId);
+                if (revIndex < 0 || revIndex >= static_cast<int>(data.reviewers.size())) continue;
                 const Reviewer& actualRev = data.reviewers[revIndex];
 
                 std::cout << "source -> [" << actualSub.submissionId << " : " 
