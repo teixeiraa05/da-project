@@ -42,7 +42,7 @@
  * A third argument (risk file path) is accepted by `main`, but risk output is
  * controlled by the `RiskAnalysis` value in the input file control section.
  * @code
- * ./main -b input.csv risk.csv
+ * ./main -b input.csv [risk.csv]
  * @endcode
  * - input.csv  — the input data file (required)
  * - risk.csv   — optional third argument accepted by batch mode
@@ -119,6 +119,8 @@
  * @section extra_docs Extra Documentation
  *
  * - @ref formulations "Algorithm Formulations"
- *   - @ref risk_analysis_k     "T2.3 — Risk Analysis K"
- *   - @ref general_formulation "T2.4 — General Formulation"
+ *   - @ref basic_formulation   "T2.1 - Basic Formulation (Primary Domains Only)"
+ *   - @ref risk_analysis_1     "T2.2 - Risk Analysis K = 1"
+ *   - @ref risk_analysis_k     "T2.3 - Risk Analysis K > 1"
+ *   - @ref general_formulation "T2.4 - General Formulation"
  */
