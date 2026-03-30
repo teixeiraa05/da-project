@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
         solver.solve();
 
         if (data.control.riskAnalysis > 0) {
-            solver.riskAnalysis();
+            solver.riskAnalysis(riskFile);
         }
 
         return 0;
