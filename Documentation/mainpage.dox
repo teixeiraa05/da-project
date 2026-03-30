@@ -1,0 +1,124 @@
+/**
+ * @mainpage
+ *
+ * @section intro Introduction
+ *
+ * This tool automates the assignment of paper submissions to reviewers
+ * for a scientific conference. Each submission has a primary (and optionally
+ * secondary) topic domain, and each reviewer has a primary (and optionally
+ * secondary) domain of expertise. The tool formulates the assignment as a
+ * **Maximum Flow problem** and solves it using either the
+ * **Edmonds-Karp** or **Ford-Fulkerson** algorithm.
+ *
+ *
+ * 
+ *
+ * The tool supports:
+ * - Interactive menu mode for manual operation
+ * - Batch mode for scripted/automated execution
+ * - Risk analysis to identify critical reviewers whose absence breaks the assignment
+ *
+ *
+ * ---
+ *
+ * @section tutorial Getting Started
+ *
+ * @subsection build Building the Project
+ * Build the executable manually as:
+ * @code
+ * g++ -Wall -ICode/include Code/src/*.cpp -o main
+ * @endcode
+ *
+ * @subsection interactive Interactive Mode
+ * Run the program with no arguments to open the menu:
+ * @code
+ * ./main
+ * @endcode
+ * You will be presented with a menu. Select option 1 to load a CSV file,
+ * then use the other options to view data, run the assignment and risk analysis.
+ *
+ * @subsection batch Batch Mode
+ * Run with the `-b` flag followed by the input CSV.
+ * A third argument (risk file path) is accepted by `main`, but risk output is
+ * controlled by the `RiskAnalysis` value in the input file control section.
+ * @code
+ * ./main -b input.csv risk.csv
+ * @endcode
+ * - input.csv  — the input data file (required)
+ * - risk.csv   — optional third argument accepted by batch mode
+ *
+ * @subsection script Using the Batch Script
+ * The project provides a helper script that compiles and runs batch mode:
+ * @code
+ * chmod +x run_batch.sh
+ * ./run_batch.sh input.csv [risk.csv]
+ * @endcode
+ *
+ * @subsection tests Running Automated Tests
+ * Use the test script to compile and run all datasets in `tests/input`:
+ * @code
+ * chmod +x run_tests.sh
+ * ./run_tests.sh
+ * @endcode
+ *
+ * @subsection input Input File Format
+ * The input file must have a .csv extension and follow this structure:
+ * @code
+ * #Submissions
+ * #Id, Title, Authors, E-mail, Primary, Secondary
+ * 31, "Paper Title", Author Name, email@domain.com, 3, 4
+ * #
+ * #Reviewers
+ * #Id, Name, E-mail, Primary, Secondary
+ * 1, Reviewer Name, reviewer@domain.com, 1,
+ * #Parameters
+ * MinReviewsPerSubmission, 2
+ * MaxReviewsPerReviewer, 4
+ * #Control
+ * GenerateAssignments, 1
+ * RiskAnalysis, 0
+ * OutputFileName, "output.csv"
+ * @endcode
+ *
+ * ---
+ *
+ * @section contents Documentation Contents
+ *
+ * - @ref ConferenceData.h  — Core data structures (Submission, Reviewer, Parameters, Control)
+ * - @ref Parser.h          — CSV input file parser
+ * - @ref ConferenceGraph.h — Flow network construction
+ * - @ref AssignmentSolver.h — Assignment solver and risk analysis
+ * - @ref EdmondsKarp.h     — Edmonds-Karp algorithm (BFS-based Max-Flow)
+ * - @ref FordFulkerson.h   — Ford-Fulkerson algorithm (DFS-based Max-Flow)
+ * - @ref Menu.h            — Interactive command-line menu
+ * - @ref Graph.h           — Generic graph data structure (Vertex, Edge, Graph)
+ *
+ * ---
+ *
+ * @section complexity Main Time Complexities
+ *
+ * | Function                              | Time Complexity |
+ * |---------------------------------------|-----------------|
+ * | Parser::parseFile()                   | O(C + N + M)    |
+ * | Parser::validate()                    | O(N + M)        |
+ * | ConferenceGraph::buildGraph()         | O(N * M)        |
+ * | AssignmentSolver::solve() [EK]        | O(V * E^2)      |
+ * | AssignmentSolver::solve() [FF]        | O(E * F)        |
+ * | AssignmentSolver::exportAssignments() | O(E + A log A)  |
+ * | AssignmentSolver::riskAnalysis()      | O(M * V * E^2)  |
+ *
+ * Where:
+ * - C = total input size (characters)
+ * - N = number of submissions
+ * - M = number of reviewers
+ * - V = N + M + 2 (total vertices in flow network)
+ * - E = number of edges (O(N*M) worst case)
+ * - A = number of assignments made
+ * - F = maximum flow value
+ *
+ * @section extra_docs Extra Documentation
+ *
+ * - @ref formulations "Algorithm Formulations"
+ *   - @ref risk_analysis_k     "T2.3 — Risk Analysis K"
+ *   - @ref general_formulation "T2.4 — General Formulation"
+ */
