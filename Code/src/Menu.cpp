@@ -44,6 +44,9 @@ void Menu::run() {
             case 9:
                 handleShowLastAssignments();
                 break;
+            case 10:
+                handleRunTests();
+                break;
             case 0:
                 std::cout << "Exiting..." << std::endl;
                 break;
@@ -56,16 +59,17 @@ void Menu::run() {
 void Menu::displayMenu() {
     std::cout << "\nScientific Conference Organization Tool \n" << std::endl;
     std::cout << "============== MENU ============== " << std::endl;
-    std::cout << " 1. Load data from file" << std::endl;
-    std::cout << " 2. Show Submissions" << std::endl;
-    std::cout << " 3. Show Reviewers" << std::endl;
-    std::cout << " 4. Show Parameters" << std::endl;
-    std::cout << " 5. Show Control Settings" << std::endl;
-    std::cout << " 6. Run Assignment (Edmonds-Karp)" << std::endl;
-    std::cout << " 7. Run Assignment (Ford-Fulkerson)" << std::endl;
-    std::cout << " 8. Run Risk Analysis" << std::endl;
-    std::cout << " 9. Show last assignments" << std::endl;
-    std::cout << " 0. Exit" << std::endl;
+    std::cout << " 01. Load data from file" << std::endl;
+    std::cout << " 02. Show Submissions" << std::endl;
+    std::cout << " 03. Show Reviewers" << std::endl;
+    std::cout << " 04. Show Parameters" << std::endl;
+    std::cout << " 05. Show Control Settings" << std::endl;
+    std::cout << " 06. Run Assignment (Edmonds-Karp)" << std::endl;
+    std::cout << " 07. Run Assignment (Ford-Fulkerson)" << std::endl;
+    std::cout << " 08. Run Risk Analysis" << std::endl;
+    std::cout << " 09. Show last assignments" << std::endl;
+    std::cout << " 10. Run Tests" << std::endl;
+    std::cout << " 00. Exit" << std::endl;
     std::cout << "================================== " << std::endl;
 }
 
@@ -195,6 +199,16 @@ void Menu::handleShowLastAssignments() {
         return;
     }
     solver->printAssignments();
+}
+
+void Menu::handleRunTests() {
+    std::cout << "\nRunning tests...\n";
+    int ret = system("bash run_tests.sh");
+    if (ret != 0) {
+        std::cout << "Tests finished with errors (exit code " << ret << ").\n";
+    } else {
+        std::cout << "Tests finished successfully.\n";
+    }
 }
 
 void Menu::handleRiskAnalysis() {
