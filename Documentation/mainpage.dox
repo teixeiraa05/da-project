@@ -84,14 +84,14 @@
  *
  * @section contents Documentation Contents
  *
- * - @ref ConferenceData.h  — Core data structures (Submission, Reviewer, Parameters, Control)
- * - @ref Parser.h          — CSV input file parser
- * - @ref ConferenceGraph.h — Flow network construction
- * - @ref AssignmentSolver.h — Assignment solver and risk analysis
- * - @ref EdmondsKarp.h     — Edmonds-Karp algorithm (BFS-based Max-Flow)
- * - @ref FordFulkerson.h   — Ford-Fulkerson algorithm (DFS-based Max-Flow)
- * - @ref Menu.h            — Interactive command-line menu
- * - @ref Graph.h           — Generic graph data structure (Vertex, Edge, Graph)
+ * - @ref ConferenceData   — Core data structures (Submission, Reviewer, Parameters, Control)
+ * - @ref Parser           — CSV input file parser
+ * - @ref ConferenceGraph  — Flow network construction
+ * - @ref AssignmentSolver — Assignment solver and risk analysis
+ * - @ref EdmondsKarp.h      — Edmonds-Karp algorithm (BFS-based Max-Flow)
+ * - @ref FordFulkerson.h    — Ford-Fulkerson algorithm (DFS-based Max-Flow)
+ * - @ref Menu             — Interactive command-line menu
+ * - @ref Graph            — Generic graph data structure (Vertex, Edge, Graph)
  *
  * ---
  *
