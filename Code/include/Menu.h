@@ -154,13 +154,4 @@ public:
      * @complexity Space: O(1).
      */
     void handleShowLastAssignments();
-
-    /**
-     * @brief Prints a warning message if no data has been loaded yet.
-     *
-     * Used as a guard in menu handlers that require data to be loaded first.
-     *
-     * @complexity Time: O(1). Space: O(1).
-     */
-    void requireData();
 };

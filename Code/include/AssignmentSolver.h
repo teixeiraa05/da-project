@@ -155,4 +155,11 @@ private:
      * @complexity Time: O(1). Space: O(1).
      */
     int getReviewerRealId(int nodeId) const;
+
+    /**
+     * @brief Returns the graph node ID for the sink vertex.
+     * @return N + M + 1 where N = submissions, M = reviewers.
+     * @complexity Time: O(1). Space: O(1).
+     */
+    int getSinkId() const;
 };

@@ -1,8 +1,7 @@
 // Original code by Gonçalo Leão
 // Updated by DA 2024/2025 Team
 
-#ifndef DA_TP_CLASSES_GRAPH
-#define DA_TP_CLASSES_GRAPH
+#pragma once
 
 /**
  * @file Graph.h
@@ -668,9 +667,9 @@ Vertex<T> * Graph<T>::findVertex(const T &in) const {
 
 template <class T>
 int Graph<T>::findVertexIdx(const T &in) const {
-    for (unsigned i = 0; i < vertexSet.size(); i++)
+    for (size_t i = 0; i < vertexSet.size(); i++)
         if (vertexSet[i]->getInfo() == in)
-            return i;
+            return static_cast<int>(i);
     return -1;
 }
 
@@ -815,5 +814,3 @@ Graph<T>::~Graph() {
     deleteMatrix(distMatrix, vertexSet.size());
     deleteMatrix(pathMatrix, vertexSet.size());
 }
-
-#endif /* DA_TP_CLASSES_GRAPH */

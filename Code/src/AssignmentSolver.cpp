@@ -40,7 +40,7 @@ AssignmentSolver::AssignmentSolver(const ConferenceData& data) : data(data) {
 void AssignmentSolver::solve(FlowAlgorithm algo) {
     // Source is always 0, Sink is the last node
     int sourceId = 0;
-    int sinkId = static_cast<int>(data.reviewers.size() + data.submissions.size() + 1);
+    int sinkId = getSinkId();
 
     // Run the Max Flow algorithm
     if (algo == FlowAlgorithm::FORD_FULKERSON) {
@@ -152,7 +152,7 @@ std::vector<int> AssignmentSolver::riskAnalysis(const std::string& filename) con
     if (data.control.riskAnalysis == 0) return riskyReviewers;
 
     int sourceId = 0;
-    int sinkId = static_cast<int>(data.reviewers.size() + data.submissions.size() + 1);
+    int sinkId = getSinkId();
     int totalRequired = static_cast<int>(data.submissions.size() * data.params.minReviewsPerSubmission);
 
     // Initial check to see if we currently meet the requirement
@@ -240,6 +240,10 @@ int AssignmentSolver::getReviewerRealId(int nodeId) const {
     return nodeId - 1 - static_cast<int>(data.submissions.size());
 }
 
+int AssignmentSolver::getSinkId() const {
+    return static_cast<int>(data.submissions.size() + data.reviewers.size() + 1);
+}
+
 // --------------------------- GRAPHVIZ GENERATION ---------------------------------
 void AssignmentSolver::generateGraphviz(const std::string& filename) const {
     std::ofstream out(filename);
@@ -255,7 +259,7 @@ void AssignmentSolver::generateGraphviz(const std::string& filename) const {
     out << "    node [fontname=\"Helvetica\", style=filled];\n\n";
 
     int sourceId = 0;
-    int sinkId = static_cast<int>(data.submissions.size() + data.reviewers.size() + 1);
+    int sinkId = getSinkId();
 
     // ---------------------------------------------------------
     // STEP 1: Define all the Nodes and their Custom Labels
@@ -334,7 +338,7 @@ void AssignmentSolver::printAssignments() const {
     bool found = false;
 
     int sourceId = 0;
-    int sinkId = static_cast<int>(data.submissions.size() + data.reviewers.size() + 1);
+    int sinkId = getSinkId();
     
     // Use a vector for O(1) access and fewer allocations - Senior Mentor optimization
     std::vector<std::pair<double, double>> nodeAgg(sinkId + 1, {0.0, 0.0});
