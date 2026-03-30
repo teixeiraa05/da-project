@@ -20,7 +20,7 @@
  *
  * Example usage:
  * @code
- * Menu menu;
+ * Menu menu(argv[0]);
  * menu.run();   // blocks until user selects exit
  * @endcode
  *
@@ -33,6 +33,8 @@
  * -# Run assignment (Edmonds-Karp)
  * -# Run assignment (Ford-Fulkerson)
  * -# Run risk analysis
+ * -# Show last assignments
+ * -# Run tests
  * -# Exit
  */
 class Menu {
@@ -81,18 +83,18 @@ public:
     void handleLoadFile();
 
     /**
-     * @brief Displays all submissions in a formatted table sorted by ID.
+     * @brief Displays all submissions.
      * @pre dataLoaded == true
-     * @complexity Time:  O(N log N) for sorting + O(N) for display.
-     * @complexity Space: O(N) for the sorted copy.
+     * @complexity Time:  O(N) for display.
+     * @complexity Space: O(1).
      */
     void handleShowSubmissions();
 
     /**
-     * @brief Displays all reviewers in a formatted table sorted by ID.
+     * @brief Displays all reviewers.
      * @pre dataLoaded == true
-     * @complexity Time:  O(M log M) for sorting + O(M) for display.
-     * @complexity Space: O(M) for the sorted copy.
+     * @complexity Time:  O(M) for display.
+     * @complexity Space: O(1).
      */
     void handleShowReviewers();
 
@@ -140,10 +142,10 @@ public:
      * @brief Runs the risk analysis based on the RiskAnalysis control parameter.
      *
      * For RiskAnalysis = 1: identifies reviewers whose removal makes the
-     * assignment infeasible. Results are appended to the output file.
+     * assignment infeasible. If no assignment has been generated yet,
+     * automatically runs Edmonds-Karp first. Results are appended to the output file.
      *
      * @pre dataLoaded == true
-     * @pre assignmentGenerated == true
      * @complexity Time:  O(M * (N*M + V*E²)) where M = reviewers.
      * @complexity Space: O(N + M) per iteration.
      */

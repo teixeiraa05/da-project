@@ -42,8 +42,10 @@ public:
      * section parser. After parsing, validates the data for mandatory fields
      * and duplicate identifiers.
      *
-     * @param filename Path to the input CSV file (must have .csv extension).
-     * @return Populated ConferenceData struct. Check submissions/reviewers for emptiness on failure.
+     * @param filename Path to the input CSV file (must have a .csv extension).
+     * @return Populated ConferenceData struct. On failure (file not found, parse
+     *         error, or validation failure), returns a default-constructed
+     *         ConferenceData with empty submissions and reviewers.
      *
      * @complexity Time: O(C + N + M), where C = total input size (characters),
      *                   N = number of submissions, M = number of reviewers.
@@ -121,7 +123,7 @@ private:
     std::vector<std::string> splitLine(const std::string& line);
 
     /**
-     * @brief Trims leading and trailing whitespace and quotes from a string.
+     * @brief Trims leading and trailing whitespace from a string.
      * @param str Input string.
      * @return Trimmed string.
      */
