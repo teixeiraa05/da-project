@@ -209,8 +209,16 @@ void Menu::handleRiskAnalysis() {
     }
 
     std::cout << "\nRunning Risk Analysis...\n";
-    AssignmentSolver solver(data);
-    std::vector<int> riskyReviewers = solver.riskAnalysis();
+
+    if (!solver) {
+        solver = std::make_unique<AssignmentSolver>(data);
+    }
+    if (!assignmentGenerated) {
+        solver->solve(FlowAlgorithm::EDMONDS_KARP);
+        assignmentGenerated = true;
+    }
+
+    std::vector<int> riskyReviewers = solver->riskAnalysis();
 
     std::cout << "\n--- Risk Analysis Results ---\n";
     if (riskyReviewers.empty()) {
