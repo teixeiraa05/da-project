@@ -6,8 +6,151 @@
  * This page describes the theoretical formulations and algorithmic approaches
  * for the more complex variants of the reviewer assignment problem.
  *
+ * - @subpage basic_formulation
+ * - @subpage risk_analysis_1
  * - @subpage risk_analysis_k
  * - @subpage general_formulation
+ */
+
+/**
+ * @page basic_formulation T2.1 — Basic Formulation without Any Risk Analysis
+ *
+ * @tableofcontents
+ *
+ * @section bf_problem Problem Statement
+ *
+ * Formulate the Review Assignment Problem as a Max-Flow problem[cite: 136]. 
+ * For this base case, the assignment must exclusively consider the Primary Domains of the submissions and the Primary Expertise of the reviewers[cite: 137]. 
+ * It is assumed that all reviewers will carry out their reviews (no risk analysis is required)[cite: 138].
+ *
+ * @section bf_approach Approach
+ *
+ * The problem is mapped to a standard network flow model where the goal is to push enough flow from a universal Source to a universal Sink to satisfy all review requirements.
+ *
+ * @subsection bf_step1 Step 1 — Graph Construction
+ *
+ * A directed graph is constructed with four layers:
+ * 1. <b>Source Node (S)</b>
+ * 2. <b>Submission Nodes</b>
+ * 3. <b>Reviewer Nodes</b>
+ * 4. <b>Sink Node (T)</b>
+ *
+ * Edges and capacities are defined as follows to enforce the constraints:
+ * @code
+ * Source → Submission: capacity = MinReviewsPerSubmission
+ * (Ensures a submission requests exactly the needed number of reviews)
+ *
+ * Submission → Reviewer: capacity = 1
+ * (Added ONLY if primary submission domain == primary reviewer expertise)
+ * (Ensures a reviewer cannot review the same paper more than once)
+ *
+ * Reviewer → Sink: capacity = MaxReviewsPerReviewer
+ * (Ensures a reviewer does not exceed their maximum workload)
+ * @endcode
+ *
+ * @subsection bf_step2 Step 2 — Run Max-Flow
+ *
+ * Run a Maximum Flow algorithm (such as Edmonds-Karp or Ford-Fulkerson) from Source to Sink. 
+ * @subsection bf_step3 Step 3 — Interpret Results
+ *
+ * The assignment is deemed **successful** if the total max flow equals the sum of `MinReviewsPerSubmission` across all submissions. 
+ * The actual assignments are extracted by finding all `Submission → Reviewer` edges that have a positive flow (flow = 1) in the residual graph. 
+ * The output is then exported to the required CSV format.
+ *
+ * @section bf_complexity Complexity Analysis
+ *
+ * | Algorithm       | Time Complexity          | Space    |
+ * |-----------------|--------------------------|----------|
+ * | Edmonds-Karp    | O(V × E²)                | O(V + E) |
+ * | Ford-Fulkerson  | O(E × f)                 | O(V + E) |
+ *
+ * Where:
+ * - N = number of submissions
+ * - M = number of reviewers
+ * - V = N + M + 2 (total vertices)
+ * - E = O(N × M) (worst-case total edges if all domains match)
+ * - f = max flow (N × MinReviewsPerSubmission)
+ */
+
+/**
+ * @page risk_analysis_1 T2.2 — Basic Formulation with Risk Analysis = 1
+ *
+ * @tableofcontents
+ *
+ * @section ra1_problem Problem Statement
+ *
+ * Based on the basic formulation, determine if there is a single reviewer whose failure to do all of their assignments would hamper the overall assignment process.
+ *
+ * @section ra1_approach Approach
+ *
+ * Since we only need to test the failure of a *single* reviewer at a time (K=1), we can use a straightforward iterative approach without needing the complex vertex-splitting techniques required for higher values of K.
+ *
+ * @code
+ * RiskyReviewers = {}
+ * ExpectedTotalFlow = sum(MinReviewsPerSubmission for all submissions)
+ *
+ * for each Reviewer R in the network:
+ * 1. Set capacity of edge (R → Sink) to 0 (simulating their absence)
+ * 2. Run Max-Flow from scratch on the modified graph
+ * 3. if (TotalFlow < ExpectedTotalFlow):
+ *       RiskyReviewers.add(R)
+ * 4. Restore capacity of edge (R → Sink) to MaxReviewsPerReviewer
+ * report RiskyReviewers sorted
+ * @endcode
+ *
+ * @section ra1_complexity Complexity Analysis
+ *
+ * | Approach                  | Time Complexity          | Space    |
+ * |---------------------------|--------------------------|----------|
+ * | Iterative Edmonds-Karp    | O(M × V × E²)            | O(V + E) |
+ * * Because we execute the Max-Flow algorithm exactly M times (once for each reviewer), the complexity is strictly multiplied by M[cite: 148]. Since M is typically a manageable number, this polynomial time approach is highly efficient for K=1.
+ *
+ * @section ra1_example Non-Trivial Example
+ *
+ * @subsection ra1_input Input
+ * @code
+ * #Submissions
+ * 1, "Paper A", Author A, a@up.pt, 1,
+ * 2, "Paper B", Author B, b@up.pt, 2,
+ * #
+ * #Reviewers
+ * 1, Reviewer One,   r1@up.pt, 1,
+ * 2, Reviewer Two,   r2@up.pt, 1,
+ * 3, Reviewer Three, r3@up.pt, 2,
+ * 4, Reviewer Four,  r4@up.pt, 2,
+ * 5, Reviewer Five,  r5@up.pt, 2,
+ * #Parameters
+ * MinReviewsPerSubmission, 2
+ * MaxReviewsPerReviewer, 2
+ * PrimaryReviewerExpertise, 1
+ * SecondaryReviewerExpertise, 0
+ * PrimarySubmissionDomain, 1
+ * SecondarySubmissionDomain, 0
+ * #Control
+ * GenerateAssignments, 1
+ * RiskAnalysis, 1
+ * OutputFileName, "output.csv"
+ * @endcode
+ *
+ * @subsection ra1_reasoning Why This Is Non-Trivial
+ *
+ * At first glance, we have plenty of total capacity: 
+ * - 2 submissions needing 2 reviews each = 4 total reviews needed.
+ * - 5 reviewers capable of 2 reviews each = 10 total capacity.
+ * * However, the capacity is heavily unbalanced by domain:
+ * - **Domain 1 (Paper A)**: Needs 2 reviews. Only Reviewer 1 and Reviewer 2 have Domain 1 expertise.
+ * - **Domain 2 (Paper B)**: Needs 2 reviews. Reviewers 3, 4, and 5 have Domain 2 expertise.
+ *
+ * Even though a reviewer can do 2 reviews (`MaxReviewsPerReviewer, 2`), they can only review a specific paper **once** (the Submission → Reviewer edge has a capacity of 1). 
+ * * If **Reviewer 1** fails, Paper A is left with ONLY Reviewer 2. Reviewer 2 can only give 1 review to Paper A. Therefore, Paper A will only get 1 review out of the 2 required, breaking the feasibility[cite: 149].
+ * * Conversely, if Reviewer 3 fails, Paper B still has Reviewers 4 and 5 available, which is exactly enough to satisfy its requirement of 2 reviews. 
+ *
+ * @subsection ra1_output Expected Output
+ * @code
+ * #Risk Analysis: 1
+ * 1, 2
+ * @endcode
+ * * Reviewers 1 and 2 are flagged as risky because the failure of either one leaves Domain 1 without enough unique reviewers to satisfy the `MinReviewsPerSubmission` constraint for Paper A.
  */
 
 /**
