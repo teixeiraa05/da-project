@@ -1,24 +1,25 @@
 #include "../include/Menu.h"
 #include "../include/AssignmentSolver.h"
 
-int main(int argc, char* argv[]) {
-    //Batch mode: if arguments are provided, run the program in batch mode
+int main(int argc, char *argv[]) {
+    // Batch mode: if arguments are provided, run the program in batch mode
     if (argc >= 3 && std::string(argv[1]) == "-b") {
-        std::string inputFile = argv[2];
-        std::string riskFile = (argc >= 4) ? argv[3] : "";
-        
-        Parser parser;
-        ConferenceData data = parser.parseFile(inputFile);
-        if (data.submissions.empty() || data.reviewers.empty()) return 1;
+	std::string inputFile = argv[2];
+	std::string riskFile = (argc >= 4) ? argv[3] : "";
 
-        AssignmentSolver solver(data);
-        solver.solve();
+	Parser parser;
+	ConferenceData data = parser.parseFile(inputFile);
+	if (data.submissions.empty() || data.reviewers.empty())
+	    return 1;
 
-        if (data.control.riskAnalysis > 0) {
-            solver.riskAnalysis(riskFile);
-        }
+	AssignmentSolver solver(data);
+	solver.solve();
 
-        return 0;
+	if (data.control.riskAnalysis > 0) {
+	    solver.riskAnalysis(riskFile);
+	}
+
+	return 0;
     }
 
 

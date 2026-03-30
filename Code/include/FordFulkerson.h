@@ -23,7 +23,7 @@
  *
  */
 template <class T>
-bool dfsFindAugmentingPath(Vertex<T>* v, Vertex<T>* t, double& flow);
+bool dfsFindAugmentingPath(Vertex<T> *v, Vertex<T> *t, double &flow);
 
 /**
  * @brief Runs the Ford-Fulkerson Max-Flow algorithm on a graph.
@@ -42,18 +42,18 @@ bool dfsFindAugmentingPath(Vertex<T>* v, Vertex<T>* t, double& flow);
  * @param source Info value of the source vertex.
  * @param target Info value of the sink vertex.
  *
- * @throws std::logic_error if source or target vertex is not found in the graph.
+ * @throws std::logic_error if source or target vertex is not found in the
+ * graph.
  *
- * @note The flow values are stored directly on the graph edges after completion.
- *       Use edge->getFlow() to retrieve individual assignment results.
+ * @note The flow values are stored directly on the graph edges after
+ * completion. Use edge->getFlow() to retrieve individual assignment results.
  *
  * @complexity Time: O(E * F), where F is the max-flow value.
  *                    In practice this is fast for this problem since capacities
  *                    are small integers, but theoretically unbounded for large
  *                    capacity values.
  */
-template <class T>
-void fordFulkerson(Graph<T>* g, int source, int target);
+template <class T> void fordFulkerson(Graph<T> *g, int source, int target);
 
 /**
  * @brief DFS search for an augmenting path in the residual graph.
@@ -62,44 +62,44 @@ void fordFulkerson(Graph<T>* g, int source, int target);
  * When a path reaches the sink, updates edge flows while recursion unwinds.
  */
 template <class T>
-bool dfsFindAugmentingPath(Vertex<T>* v, Vertex<T>* t, double& flow) {
-	if (v == t) {
+bool dfsFindAugmentingPath(Vertex<T> *v, Vertex<T> *t, double &flow) {
+    if (v == t) {
+	return true;
+    }
+
+    v->setVisited(true);
+
+    // Try forward residual edges.
+    for (auto e : v->getAdj()) {
+	auto w = e->getDest();
+	double residual = e->getWeight() - e->getFlow();
+
+	if (!w->isVisited() && residual > 0) {
+	    double bottleneck = std::min(flow, residual);
+	    if (dfsFindAugmentingPath(w, t, bottleneck)) {
+		e->setFlow(e->getFlow() + bottleneck);
+		flow = bottleneck;
 		return true;
+	    }
 	}
+    }
 
-	v->setVisited(true);
+    // Try backward residual edges.
+    for (auto e : v->getIncoming()) {
+	auto w = e->getOrig();
+	double residual = e->getFlow();
 
-	// Try forward residual edges.
-	for (auto e : v->getAdj()) {
-		auto w = e->getDest();
-		double residual = e->getWeight() - e->getFlow();
-
-		if (!w->isVisited() && residual > 0) {
-			double bottleneck = std::min(flow, residual);
-			if (dfsFindAugmentingPath(w, t, bottleneck)) {
-				e->setFlow(e->getFlow() + bottleneck);
-				flow = bottleneck;
-				return true;
-			}
-		}
+	if (!w->isVisited() && residual > 0) {
+	    double bottleneck = std::min(flow, residual);
+	    if (dfsFindAugmentingPath(w, t, bottleneck)) {
+		e->setFlow(e->getFlow() - bottleneck);
+		flow = bottleneck;
+		return true;
+	    }
 	}
+    }
 
-	// Try backward residual edges.
-	for (auto e : v->getIncoming()) {
-		auto w = e->getOrig();
-		double residual = e->getFlow();
-
-		if (!w->isVisited() && residual > 0) {
-			double bottleneck = std::min(flow, residual);
-			if (dfsFindAugmentingPath(w, t, bottleneck)) {
-				e->setFlow(e->getFlow() - bottleneck);
-				flow = bottleneck;
-				return true;
-			}
-		}
-	}
-
-	return false;
+    return false;
 }
 
 /**
@@ -108,29 +108,28 @@ bool dfsFindAugmentingPath(Vertex<T>* v, Vertex<T>* t, double& flow) {
  * Initializes all flows to zero and repeatedly runs DFS to find and
  * apply augmenting paths until none can be found.
  */
-template <class T>
-void fordFulkerson(Graph<T>* g, int source, int target) {
-	auto s = g->findVertex(source);
-	auto t = g->findVertex(target);
+template <class T> void fordFulkerson(Graph<T> *g, int source, int target) {
+    auto s = g->findVertex(source);
+    auto t = g->findVertex(target);
 
-	if (s == nullptr || t == nullptr) {
-		throw std::logic_error("Source or target vertex not found in graph");
+    if (s == nullptr || t == nullptr) {
+	throw std::logic_error("Source or target vertex not found in graph");
+    }
+
+    for (auto v : g->getVertexSet()) {
+	for (auto e : v->getAdj()) {
+	    e->setFlow(0);
 	}
+    }
 
+    while (true) {
 	for (auto v : g->getVertexSet()) {
-		for (auto e : v->getAdj()) {
-			e->setFlow(0);
-		}
+	    v->setVisited(false);
 	}
 
-	while (true) {
-		for (auto v : g->getVertexSet()) {
-			v->setVisited(false);
-		}
-
-		double f = INF;
-		if (!dfsFindAugmentingPath(s, t, f)) {
-			break;
-		}
+	double f = INF;
+	if (!dfsFindAugmentingPath(s, t, f)) {
+	    break;
 	}
+    }
 }
