@@ -38,6 +38,12 @@
 class Menu {
 public:
     /**
+     * @brief Constructs the Menu with the path to the current executable.
+     * @param execPath Path to the executable (typically argv[0]).
+     */
+    Menu(const std::string& execPath = "");
+
+    /**
      * @brief Starts the interactive menu loop.
      *
      * Displays the menu, reads user input and dispatches to the appropriate
@@ -55,6 +61,7 @@ public:
         bool           assignmentGenerated = false; ///< True after an assignment has been successfully computed
         ConferenceData data;                       ///< Holds the parsed conference data (submissions, reviewers, parameters)
         std::unique_ptr<AssignmentSolver> solver;
+        std::string execPath;                      ///< Path to the current executable (argv[0])
 
     /**
      * @brief Renders the main menu to stdout.
@@ -154,4 +161,17 @@ public:
      * @complexity Space: O(1).
      */
     void handleShowLastAssignments();
+
+    /**
+     * @brief Runs the test suite on input/output file pairs.
+     *
+     * Prompts the user for input directory and output directory.
+     * For each .csv in the input directory, runs the executable in batch mode,
+     * then compares the generated output against the expected output file
+     * (same filename with "output_" prefix) in the output directory.
+     *
+     * @complexity Time:  O(F * (P + D)) where F = files, P = parse+solve, D = diff.
+     * @complexity Space: O(L) where L = longest file line.
+     */
+    void handleRunTests();
 };

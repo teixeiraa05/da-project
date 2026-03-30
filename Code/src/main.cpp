@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
     }
 
 
-    Menu menu;
+    Menu menu(argv[0]);
     menu.run();
     return 0;
 }
