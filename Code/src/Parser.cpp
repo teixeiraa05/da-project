@@ -1,6 +1,5 @@
 #include "../include/Parser.h"
 #include <fstream>
-#include <sstream>
 #include <iostream>
 #include <algorithm>
 #include <set>
@@ -52,8 +51,6 @@ ConferenceData Parser::parseFile(const std::string& filename) {
 
         
         std::vector<std::string> tokens = splitLine(line);
-        std::stringstream ss(line);
-        std::string token;
 
 
         // Dispatch to the appropriate parsing function based on the current section

@@ -40,7 +40,7 @@ AssignmentSolver::AssignmentSolver(const ConferenceData& data) : data(data) {
 void AssignmentSolver::solve(FlowAlgorithm algo) {
     // Source is always 0, Sink is the last node
     int sourceId = 0;
-    int sinkId = static_cast<int>(data.reviewers.size() + data.submissions.size() + 1);
+    int sinkId = getSinkId();
 
     // Run the Max Flow algorithm
     if (algo == FlowAlgorithm::FORD_FULKERSON) {
@@ -99,7 +99,8 @@ void AssignmentSolver::exportAssignments(const std::string& filename) const {
                 actualReviews++;
                 
                 int revNodeId = edge->getDest()->getInfo();
-                int revIndex = getReviewerRealId(revNodeId); 
+                int revIndex = getReviewerRealId(revNodeId);
+                if (revIndex < 0 || revIndex >= static_cast<int>(data.reviewers.size())) continue;
                 const Reviewer& actualRev = data.reviewers[revIndex];
 
                 int matchDomainId = domainsMatch(actualSub, actualRev, data.control.generateAssignments);
@@ -151,7 +152,7 @@ std::vector<int> AssignmentSolver::riskAnalysis(const std::string& filename) con
     if (data.control.riskAnalysis == 0) return riskyReviewers;
 
     int sourceId = 0;
-    int sinkId = static_cast<int>(data.reviewers.size() + data.submissions.size() + 1);
+    int sinkId = getSinkId();
     int totalRequired = static_cast<int>(data.submissions.size() * data.params.minReviewsPerSubmission);
 
     // Initial check to see if we currently meet the requirement
@@ -165,14 +166,18 @@ std::vector<int> AssignmentSolver::riskAnalysis(const std::string& filename) con
     
     // Only proceed if the problem was solvable with everyone present
     if (initialFlow >= totalRequired) {
+        Graph<int> tempGraph(flowGraph);
+
         for (size_t i = 0; i < data.reviewers.size(); i++) {
-            ConferenceGraph tempBuilder(data);
-            Graph<int> tempGraph = tempBuilder.buildGraph();
-            
-            // Calculate the Graph Node ID for the current reviewer to remove them
-            int nodeToDelete = static_cast<int>(i + 1 + data.submissions.size());
-            tempGraph.removeVertex(nodeToDelete);
-            
+            int reviewerNodeId = static_cast<int>(i + 1 + data.submissions.size());
+
+            // Zero out edges to/from this reviewer
+            Vertex<int>* rev = tempGraph.findVertex(reviewerNodeId);
+            for (auto e : rev->getIncoming()) {
+                tempGraph.setEdgeWeight(e->getOrig()->getInfo(), reviewerNodeId, 0);
+            }
+            tempGraph.setEdgeWeight(reviewerNodeId, sinkId, 0);
+
             edmondsKarp(&tempGraph, sourceId, sinkId);
 
             int totalFlow = 0;
@@ -185,6 +190,12 @@ std::vector<int> AssignmentSolver::riskAnalysis(const std::string& filename) con
             if (totalFlow < totalRequired) {
                 riskyReviewers.push_back(data.reviewers[i].reviewerId);
             }
+
+            // Restore edge weights
+            for (auto e : rev->getIncoming()) {
+                tempGraph.setEdgeWeight(e->getOrig()->getInfo(), reviewerNodeId, 1);
+            }
+            tempGraph.setEdgeWeight(reviewerNodeId, sinkId, data.params.maxReviewsPerReviewer);
         }
     }
 
@@ -229,6 +240,10 @@ int AssignmentSolver::getReviewerRealId(int nodeId) const {
     return nodeId - 1 - static_cast<int>(data.submissions.size());
 }
 
+int AssignmentSolver::getSinkId() const {
+    return static_cast<int>(data.submissions.size() + data.reviewers.size() + 1);
+}
+
 // --------------------------- GRAPHVIZ GENERATION ---------------------------------
 void AssignmentSolver::generateGraphviz(const std::string& filename) const {
     std::ofstream out(filename);
@@ -244,7 +259,7 @@ void AssignmentSolver::generateGraphviz(const std::string& filename) const {
     out << "    node [fontname=\"Helvetica\", style=filled];\n\n";
 
     int sourceId = 0;
-    int sinkId = static_cast<int>(data.submissions.size() + data.reviewers.size() + 1);
+    int sinkId = getSinkId();
 
     // ---------------------------------------------------------
     // STEP 1: Define all the Nodes and their Custom Labels
@@ -268,14 +283,21 @@ void AssignmentSolver::generateGraphviz(const std::string& filename) const {
         else if (id <= static_cast<int>(data.submissions.size())) {
             // It's a Submission! Look up its real ID.
             int subIdx = getSubmissionRealId(id);
-            label = "Sub " + std::to_string(data.submissions[subIdx].submissionId);
+            if (subIdx >= 0 && subIdx < static_cast<int>(data.submissions.size())) {
+                label = "Sub " + std::to_string(data.submissions[subIdx].submissionId);
+            } else {
+                label = "Sub ?";
+            }
             fillcolor = "lightyellow";
         } 
         else {
             // It's a Reviewer! Look up their real ID.
             int revIdx = getReviewerRealId(id);
-            // Using \\n creates a line break inside the Graphviz node
-            label = "Rev " + std::to_string(data.reviewers[revIdx].reviewerId);
+            if (revIdx >= 0 && revIdx < static_cast<int>(data.reviewers.size())) {
+                label = "Rev " + std::to_string(data.reviewers[revIdx].reviewerId);
+            } else {
+                label = "Rev ?";
+            }
             fillcolor = "lightblue";
         }
 
@@ -316,7 +338,7 @@ void AssignmentSolver::printAssignments() const {
     bool found = false;
 
     int sourceId = 0;
-    int sinkId = static_cast<int>(data.submissions.size() + data.reviewers.size() + 1);
+    int sinkId = getSinkId();
     
     // Use a vector for O(1) access and fewer allocations - Senior Mentor optimization
     std::vector<std::pair<double, double>> nodeAgg(sinkId + 1, {0.0, 0.0});
@@ -356,6 +378,7 @@ void AssignmentSolver::printAssignments() const {
             if (edge->getFlow() == 1.0) {
                 int revNodeId = edge->getDest()->getInfo();
                 int revIndex = getReviewerRealId(revNodeId);
+                if (revIndex < 0 || revIndex >= static_cast<int>(data.reviewers.size())) continue;
                 const Reviewer& actualRev = data.reviewers[revIndex];
 
                 std::cout << "source -> [" << actualSub.submissionId << " : " 

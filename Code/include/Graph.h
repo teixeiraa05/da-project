@@ -1,8 +1,7 @@
 // Original code by Gonçalo Leão
 // Updated by DA 2024/2025 Team
 
-#ifndef DA_TP_CLASSES_GRAPH
-#define DA_TP_CLASSES_GRAPH
+#pragma once
 
 /**
  * @file Graph.h
@@ -23,6 +22,7 @@
 #include <queue>
 #include <limits>
 #include <algorithm>
+#include <unordered_map>
 
 template <class T>
 class Edge;
@@ -164,7 +164,7 @@ protected:
     bool         processing = false;  ///< Used by DAG cycle detection
     int          low        = -1;     ///< Used by Tarjan SCC
     int          num        = -1;     ///< Used by Tarjan SCC
-    unsigned int indegree;            ///< Used by topological sort
+    unsigned int indegree = 0;            ///< Used by topological sort
     double       dist       = 0;      ///< Used by Dijkstra, Prim
     Edge<T>*     path       = nullptr;///< Used by flow algorithms for path reconstruction
     int          queueIndex = 0;      ///< Required by MutablePriorityQueue and UFDS
@@ -176,6 +176,9 @@ protected:
      * @complexity Space: O(1).
      */
     void deleteEdge(Edge<T>* edge);
+
+    template <class U>
+    friend class Graph;
 };
 
 /********************** Edge  ****************************/
@@ -256,13 +259,19 @@ public:
      */
     void setFlow(double flow);
 
+    /**
+     * @brief Sets the weight (capacity) of this edge.
+     * @param w New weight value.
+     */
+    void setWeight(double w);
+
 protected:
     Vertex<T>* dest;              ///< Destination vertex
     double     weight;            ///< Edge weight / capacity
     bool       selected = false;  ///< Auxiliary selection flag
     Vertex<T>* orig;              ///< Origin vertex
     Edge<T>*   reverse  = nullptr;///< Reverse edge for residual graph (nullptr if not set)
-    double     flow;              ///< Current flow through this edge
+    double     flow = 0;          ///< Current flow through this edge
 };
 
 /********************** Graph  ****************************/
@@ -288,6 +297,24 @@ protected:
 template <class T>
 class Graph {
 public:
+    /**
+     * @brief Default constructor.
+     */
+    Graph() = default;
+
+    /**
+     * @brief Deep copy constructor — creates independent copy with re-linked reverse edges.
+     * @param other Graph to copy.
+     */
+    Graph(const Graph<T>& other);
+
+    /**
+     * @brief Copy assignment via copy-and-swap — deep copies with re-linked reverse edges.
+     * @param other Graph to copy.
+     * @return Reference to this graph.
+     */
+    Graph<T>& operator=(Graph<T> other);
+
     /**
      * @brief Destructor — frees all vertex memory and distance/path matrices.
      * @complexity Time: O(V + E). Space: O(1).
@@ -355,6 +382,16 @@ public:
      * @complexity Time: O(V). Space: O(1).
      */
     bool addBidirectionalEdge(const T& sourc, const T& dest, double w);
+
+    /**
+     * @brief Sets the weight of the edge from sourc to dest and its reverse.
+     * @param sourc Info value of the source vertex.
+     * @param dest  Info value of the destination vertex.
+     * @param w     New weight / capacity.
+     * @return true if the edge was found and updated, false otherwise.
+     * @complexity Time: O(V + E). Space: O(1).
+     */
+    bool setEdgeWeight(const T& sourc, const T& dest, double w);
 
     /**
      * @brief Returns the number of vertices in the graph.
@@ -603,6 +640,11 @@ void Edge<T>::setFlow(double flow) {
     this->flow = flow;
 }
 
+template <class T>
+void Edge<T>::setWeight(double w) {
+    this->weight = w;
+}
+
 /********************** Graph  ****************************/
 
 template <class T>
@@ -625,9 +667,9 @@ Vertex<T> * Graph<T>::findVertex(const T &in) const {
 
 template <class T>
 int Graph<T>::findVertexIdx(const T &in) const {
-    for (unsigned i = 0; i < vertexSet.size(); i++)
+    for (size_t i = 0; i < vertexSet.size(); i++)
         if (vertexSet[i]->getInfo() == in)
-            return i;
+            return static_cast<int>(i);
     return -1;
 }
 
@@ -688,6 +730,58 @@ bool Graph<T>::addBidirectionalEdge(const T &sourc, const T &dest, double w) {
     return true;
 }
 
+template <class T>
+bool Graph<T>::setEdgeWeight(const T &sourc, const T &dest, double w) {
+    Vertex<T>* v = findVertex(sourc);
+    if (v == nullptr) return false;
+    for (auto e : v->getAdj()) {
+        if (e->getDest()->getInfo() == dest) {
+            e->setWeight(w);
+            if (e->getReverse()) e->getReverse()->setWeight(w);
+            return true;
+        }
+    }
+    return false;
+}
+
+template <class T>
+Graph<T>::Graph(const Graph<T>& other) {
+    std::unordered_map<Vertex<T>*, Vertex<T>*> vertexMap;
+    std::unordered_map<Edge<T>*, Edge<T>*> edgeMap;
+
+    for (auto v : other.vertexSet) {
+        auto newV = new Vertex<T>(v->getInfo());
+        vertexSet.push_back(newV);
+        vertexMap[v] = newV;
+    }
+
+    for (auto v : other.vertexSet) {
+        for (auto e : v->adj) {
+            auto newE = new Edge<T>(vertexMap[v], vertexMap[e->getDest()], e->getWeight());
+            newE->setFlow(e->getFlow());
+            vertexMap[v]->adj.push_back(newE);
+            vertexMap[e->getDest()]->incoming.push_back(newE);
+            edgeMap[e] = newE;
+        }
+    }
+
+    for (auto v : other.vertexSet) {
+        for (auto e : v->adj) {
+            if (e->getReverse() != nullptr) {
+                edgeMap[e]->setReverse(edgeMap[e->getReverse()]);
+            }
+        }
+    }
+}
+
+template <class T>
+Graph<T>& Graph<T>::operator=(Graph<T> other) {
+    std::swap(vertexSet, other.vertexSet);
+    std::swap(distMatrix, other.distMatrix);
+    std::swap(pathMatrix, other.pathMatrix);
+    return *this;
+}
+
 inline void deleteMatrix(int **m, int n) {
     if (m != nullptr) {
         for (int i = 0; i < n; i++)
@@ -708,8 +802,15 @@ inline void deleteMatrix(double **m, int n) {
 
 template <class T>
 Graph<T>::~Graph() {
+    for (auto v : vertexSet) {
+        for (auto e : v->adj) {
+            delete e;
+        }
+        v->adj.clear();
+    }
+    for (auto v : vertexSet) {
+        delete v;
+    }
     deleteMatrix(distMatrix, vertexSet.size());
     deleteMatrix(pathMatrix, vertexSet.size());
 }
-
-#endif /* DA_TP_CLASSES_GRAPH */
