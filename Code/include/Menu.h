@@ -154,4 +154,11 @@ public:
      * @complexity Space: O(1).
      */
     void handleShowLastAssignments();
+
+    /**
+     * @brief Runs the test suite by executing run_tests.sh.
+     * @complexity Time: O(1) for the menu call; actual time depends on the script.
+     * @complexity Space: O(1).
+     */
+    void handleRunTests();
 };
