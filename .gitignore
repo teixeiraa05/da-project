@@ -11,6 +11,7 @@ main
 *.out
 *.dot
 
+Documentation/img
 Documentation/html
 Documentation/latex
 Doxyfile
