@@ -109,17 +109,19 @@ struct ConferenceData {
  */
 inline int domainsMatch(const Submission& sub, const Reviewer& rev, int mode) {
     bool primaryMatch = rev.primary == sub.primary;
+    bool subHasSecondary = sub.secondary >= 0;
+    bool revHasSecondary = rev.secondary >= 0;
 
     if (mode == 1) {
         if (primaryMatch) return sub.primary;
     } else if (mode == 2) {
         if (primaryMatch) return sub.primary;
-        if (rev.primary == sub.secondary) return sub.secondary;
+        if (subHasSecondary && rev.primary == sub.secondary) return sub.secondary;
     } else if (mode == 3) {
         if (primaryMatch) return sub.primary;
-        if (rev.primary == sub.secondary)  return sub.secondary;
-        if (rev.secondary == sub.primary)  return sub.primary;
-        if (rev.secondary == sub.secondary) return sub.secondary;
+        if (subHasSecondary && rev.primary == sub.secondary)  return sub.secondary;
+        if (revHasSecondary && rev.secondary == sub.primary)  return sub.primary;
+        if (subHasSecondary && revHasSecondary && rev.secondary == sub.secondary) return sub.secondary;
     }
 
     return 0;
